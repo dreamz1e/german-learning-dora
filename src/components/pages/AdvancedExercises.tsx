@@ -178,7 +178,7 @@ export function AdvancedExercises() {
                 ${
                   exerciseType === "sentence"
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:border-primary hover:bg-blue-50"
+                    : "border-border hover:border-primary hover:bg-pink-50"
                 }
               `}
             >
@@ -203,7 +203,7 @@ export function AdvancedExercises() {
                 ${
                   exerciseType === "error"
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:border-primary hover:bg-blue-50"
+                    : "border-border hover:border-primary hover:bg-pink-50"
                 }
               `}
             >
@@ -261,7 +261,7 @@ export function AdvancedExercises() {
                         ${
                           difficulty === level
                             ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary hover:bg-blue-50"
+                            : "border-border hover:border-primary hover:bg-pink-50"
                         }
                       `}
                     >
@@ -325,7 +325,11 @@ export function AdvancedExercises() {
                 : "Error Correction"}{" "}
               Exercise
             </Badge>
-            <Button variant="outline" onClick={() => setCurrentExercise(null)}>
+            <Button
+              variant="outline"
+              className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              onClick={() => setCurrentExercise(null)}
+            >
               Generate New Exercise
             </Button>
           </div>

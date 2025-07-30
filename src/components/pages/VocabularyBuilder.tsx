@@ -1,184 +1,192 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/Button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { ExerciseContainer } from '@/components/exercises/ExerciseContainer'
-import { useToast } from '@/components/ui/Toast'
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { ExerciseContainer } from "@/components/exercises/ExerciseContainer";
+import { useToast } from "@/components/ui/Toast";
 
 interface VocabularyWord {
-  german: string
-  english: string
-  difficulty: string
-  category: string
-  exampleSentence: string
+  german: string;
+  english: string;
+  difficulty: string;
+  category: string;
+  exampleSentence: string;
 }
 
 interface VocabularyExercise {
-  type: string
-  difficulty: string
-  question: string
-  options: string[]
-  correctAnswer: string
-  explanation: string
-  topic: string
-  germanText?: string
-  englishText?: string
+  type: string;
+  difficulty: string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  topic: string;
+  germanText?: string;
+  englishText?: string;
 }
 
 export function VocabularyBuilder() {
-  const { user } = useAuth()
-  const { addToast } = useToast()
-  const [currentExercise, setCurrentExercise] = useState<VocabularyExercise | null>(null)
-  const [vocabularyWords, setVocabularyWords] = useState<VocabularyWord[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [difficulty, setDifficulty] = useState('A2_BASIC')
-  const [category, setCategory] = useState('')
-  const [mode, setMode] = useState<'exercise' | 'words'>('exercise')
+  const { user } = useAuth();
+  const { addToast } = useToast();
+  const [currentExercise, setCurrentExercise] =
+    useState<VocabularyExercise | null>(null);
+  const [vocabularyWords, setVocabularyWords] = useState<VocabularyWord[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [difficulty, setDifficulty] = useState("A2_BASIC");
+  const [category, setCategory] = useState("");
+  const [mode, setMode] = useState<"exercise" | "words">("exercise");
 
   const vocabularyCategories = [
-    'Daily Life',
-    'Food & Drinks',
-    'Family & Relationships',
-    'Work & Profession',
-    'Travel & Transportation',
-    'Weather & Seasons',
-    'House & Furniture',
-    'Clothing & Appearance',
-    'Hobbies & Activities',
-    'Health & Body',
-    'Education & School',
-    'Technology'
-  ]
+    "Daily Life",
+    "Food & Drinks",
+    "Family & Relationships",
+    "Work & Profession",
+    "Travel & Transportation",
+    "Weather & Seasons",
+    "House & Furniture",
+    "Clothing & Appearance",
+    "Hobbies & Activities",
+    "Health & Body",
+    "Education & School",
+    "Technology",
+  ];
 
   const generateExercise = async () => {
-    if (!user) return
+    if (!user) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/ai/generate-exercise', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/ai/generate-exercise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: 'vocabulary',
+          type: "vocabulary",
           difficulty,
-          topic: category || undefined
-        })
-      })
+          topic: category || undefined,
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to generate exercise')
+        throw new Error("Failed to generate exercise");
       }
 
-      const data = await response.json()
-      setCurrentExercise(data.exercise)
+      const data = await response.json();
+      setCurrentExercise(data.exercise);
     } catch (error) {
-      console.error('Error generating exercise:', error)
+      console.error("Error generating exercise:", error);
       addToast({
-        type: 'error',
-        title: 'Generation Failed',
-        message: 'Could not generate vocabulary exercise. Please try again.',
-        duration: 4000
-      })
+        type: "error",
+        title: "Generation Failed",
+        message: "Could not generate vocabulary exercise. Please try again.",
+        duration: 4000,
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const generateVocabularyWords = async () => {
-    if (!user) return
+    if (!user) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/ai/generate-vocabulary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/ai/generate-vocabulary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           count: 5,
           difficulty,
-          category: category || undefined
-        })
-      })
+          category: category || undefined,
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to generate vocabulary')
+        throw new Error("Failed to generate vocabulary");
       }
 
-      const data = await response.json()
-      setVocabularyWords(data.words)
+      const data = await response.json();
+      setVocabularyWords(data.words);
     } catch (error) {
-      console.error('Error generating vocabulary:', error)
+      console.error("Error generating vocabulary:", error);
       addToast({
-        type: 'error',
-        title: 'Generation Failed',
-        message: 'Could not generate vocabulary words. Please try again.',
-        duration: 4000
-      })
+        type: "error",
+        title: "Generation Failed",
+        message: "Could not generate vocabulary words. Please try again.",
+        duration: 4000,
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleExerciseComplete = async (isCorrect: boolean, timeSpent: number) => {
-    if (!user) return
+  const handleExerciseComplete = async (
+    isCorrect: boolean,
+    timeSpent: number
+  ) => {
+    if (!user) return;
 
     try {
-      const xpAmount = isCorrect ? 20 : 8
-      await fetch('/api/gamification/award-xp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const xpAmount = isCorrect ? 20 : 8;
+      await fetch("/api/gamification/award-xp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: xpAmount,
           reason: `Vocabulary exercise: ${currentExercise?.topic}`,
-          category: 'EXERCISE'
-        })
-      })
+          category: "EXERCISE",
+        }),
+      });
 
       addToast({
-        type: 'success',
-        title: 'Exercise Complete!',
-        message: `You earned ${xpAmount} XP! ${isCorrect ? 'Perfect!' : 'Keep learning!'}`,
-        duration: 4000
-      })
+        type: "success",
+        title: "Exercise Complete!",
+        message: `You earned ${xpAmount} XP! ${
+          isCorrect ? "Perfect!" : "Keep learning!"
+        }`,
+        duration: 4000,
+      });
     } catch (error) {
-      console.error('Error awarding XP:', error)
+      console.error("Error awarding XP:", error);
     }
-  }
+  };
 
   const handleWordStudied = async () => {
-    if (!user) return
+    if (!user) return;
 
     try {
-      await fetch('/api/gamification/award-xp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/gamification/award-xp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: 5,
-          reason: 'Studied vocabulary words',
-          category: 'EXERCISE'
-        })
-      })
+          reason: "Studied vocabulary words",
+          category: "EXERCISE",
+        }),
+      });
 
       addToast({
-        type: 'success',
-        title: 'Words Studied!',
-        message: 'You earned 5 XP for studying vocabulary!',
-        duration: 3000
-      })
+        type: "success",
+        title: "Words Studied!",
+        message: "You earned 5 XP for studying vocabulary!",
+        duration: 3000,
+      });
     } catch (error) {
-      console.error('Error awarding XP:', error)
+      console.error("Error awarding XP:", error);
     }
-  }
+  };
 
-  if (!user) return null
+  if (!user) return null;
 
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Vocabulary Builder</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Vocabulary Builder
+        </h1>
         <p className="text-muted-foreground text-lg">
           Expand your German vocabulary with AI-generated words and exercises
         </p>
@@ -192,21 +200,21 @@ export function VocabularyBuilder() {
         <CardContent>
           <div className="flex space-x-4">
             <Button
-              variant={mode === 'exercise' ? 'default' : 'outline'}
+              variant={mode === "exercise" ? "default" : "outline"}
               onClick={() => {
-                setMode('exercise')
-                setCurrentExercise(null)
-                setVocabularyWords([])
+                setMode("exercise");
+                setCurrentExercise(null);
+                setVocabularyWords([]);
               }}
             >
               📝 Practice Exercise
             </Button>
             <Button
-              variant={mode === 'words' ? 'default' : 'outline'}
+              variant={mode === "words" ? "default" : "outline"}
               onClick={() => {
-                setMode('words')
-                setCurrentExercise(null)
-                setVocabularyWords([])
+                setMode("words");
+                setCurrentExercise(null);
+                setVocabularyWords([]);
               }}
             >
               📚 Study Words
@@ -216,12 +224,20 @@ export function VocabularyBuilder() {
       </Card>
 
       {/* Generator Controls */}
-      {(mode === 'exercise' && !currentExercise) || (mode === 'words' && vocabularyWords.length === 0) ? (
+      {(mode === "exercise" && !currentExercise) ||
+      (mode === "words" && vocabularyWords.length === 0) ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <span className="text-2xl">{mode === 'exercise' ? '🎯' : '📚'}</span>
-              <span>Generate {mode === 'exercise' ? 'Vocabulary Exercise' : 'Vocabulary Words'}</span>
+              <span className="text-2xl">
+                {mode === "exercise" ? "🎯" : "📚"}
+              </span>
+              <span>
+                Generate{" "}
+                {mode === "exercise"
+                  ? "Vocabulary Exercise"
+                  : "Vocabulary Words"}
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -232,19 +248,26 @@ export function VocabularyBuilder() {
                   Difficulty Level
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['A2_BASIC', 'A2_INTERMEDIATE', 'B1_BASIC', 'B1_INTERMEDIATE', 'B1_ADVANCED'].map((level) => (
+                  {[
+                    "A2_BASIC",
+                    "A2_INTERMEDIATE",
+                    "B1_BASIC",
+                    "B1_INTERMEDIATE",
+                    "B1_ADVANCED",
+                  ].map((level) => (
                     <button
                       key={level}
                       onClick={() => setDifficulty(level)}
                       className={`
                         p-3 rounded-lg border-2 text-sm font-medium transition-colors
-                        ${difficulty === level 
-                          ? 'border-primary bg-primary text-primary-foreground' 
-                          : 'border-border hover:border-primary hover:bg-blue-50'
+                        ${
+                          difficulty === level
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border hover:border-primary hover:bg-pink-50"
                         }
                       `}
                     >
-                      {level.replace('_', ' ')}
+                      {level.replace("_", " ")}
                     </button>
                   ))}
                 </div>
@@ -272,7 +295,11 @@ export function VocabularyBuilder() {
 
             <div className="flex justify-center">
               <Button
-                onClick={mode === 'exercise' ? generateExercise : generateVocabularyWords}
+                onClick={
+                  mode === "exercise"
+                    ? generateExercise
+                    : generateVocabularyWords
+                }
                 disabled={isLoading}
                 size="lg"
                 className="min-w-48"
@@ -283,7 +310,7 @@ export function VocabularyBuilder() {
                     <span>Generating...</span>
                   </div>
                 ) : (
-                  `Generate ${mode === 'exercise' ? 'Exercise' : 'Words'}`
+                  `Generate ${mode === "exercise" ? "Exercise" : "Words"}`
                 )}
               </Button>
             </div>
@@ -292,7 +319,7 @@ export function VocabularyBuilder() {
       ) : null}
 
       {/* Exercise Mode */}
-      {mode === 'exercise' && currentExercise && (
+      {mode === "exercise" && currentExercise && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <Badge variant="outline" className="text-sm">
@@ -300,6 +327,7 @@ export function VocabularyBuilder() {
             </Badge>
             <Button
               variant="outline"
+              className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
               onClick={() => setCurrentExercise(null)}
             >
               Generate New Exercise
@@ -324,23 +352,17 @@ export function VocabularyBuilder() {
       )}
 
       {/* Words Study Mode */}
-      {mode === 'words' && vocabularyWords.length > 0 && (
+      {mode === "words" && vocabularyWords.length > 0 && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <Badge variant="outline" className="text-sm">
               AI-Generated Vocabulary Words
             </Badge>
             <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={handleWordStudied}
-              >
+              <Button variant="outline" onClick={handleWordStudied}>
                 Mark as Studied (+5 XP)
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setVocabularyWords([])}
-              >
+              <Button variant="outline" onClick={() => setVocabularyWords([])}>
                 Generate New Words
               </Button>
             </div>
@@ -353,18 +375,28 @@ export function VocabularyBuilder() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <h3 className="text-2xl font-bold text-primary">{word.german}</h3>
-                        <p className="text-lg text-muted-foreground">{word.english}</p>
+                        <h3 className="text-2xl font-bold text-primary">
+                          {word.german}
+                        </h3>
+                        <p className="text-lg text-muted-foreground">
+                          {word.english}
+                        </p>
                       </div>
                       <div className="flex space-x-2">
-                        <Badge variant="info">{word.difficulty.replace('_', ' ')}</Badge>
+                        <Badge variant="info">
+                          {word.difficulty.replace("_", " ")}
+                        </Badge>
                         <Badge variant="outline">{word.category}</Badge>
                       </div>
                     </div>
-                    
+
                     <div className="bg-muted/50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-sm text-foreground mb-2">Example:</h4>
-                      <p className="text-muted-foreground italic">"{word.exampleSentence}"</p>
+                      <h4 className="font-semibold text-sm text-foreground mb-2">
+                        Example:
+                      </h4>
+                      <p className="text-muted-foreground italic">
+                        "{word.exampleSentence}"
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -416,5 +448,5 @@ export function VocabularyBuilder() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

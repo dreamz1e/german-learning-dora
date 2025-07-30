@@ -22,7 +22,8 @@ export const POST = withAuth(
 
       const exercise = await generateSentenceConstructionExercise(
         difficulty,
-        grammarFocus
+        grammarFocus,
+        userId
       );
 
       return NextResponse.json({

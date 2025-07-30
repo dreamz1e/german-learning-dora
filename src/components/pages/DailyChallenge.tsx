@@ -352,13 +352,13 @@ export function DailyChallenge() {
       </div>
 
       {/* Progress Overview */}
-      <Card className="bg-gradient-to-r from-blue-600 to-purple-700 text-white border-0 shadow-xl">
+      <Card className="bg-gradient-to-r from-pink-600 to-rose-700 text-white border-0 shadow-xl">
         <CardContent className="p-6">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">Today's Progress</h2>
-                <p className="text-blue-100">
+                <p className="text-pink-100">
                   Level {userLevel} •{" "}
                   {new Date().toLocaleDateString("en-US", {
                     weekday: "long",
@@ -371,7 +371,7 @@ export function DailyChallenge() {
                 <div className="text-3xl font-bold">
                   {completedTasks.length}/{dailyTasks.length}
                 </div>
-                <div className="text-blue-100 text-sm">Tasks Complete</div>
+                <div className="text-pink-100 text-sm">Tasks Complete</div>
               </div>
             </div>
 
@@ -386,15 +386,15 @@ export function DailyChallenge() {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="bg-white/10 rounded-lg p-3">
                 <div className="text-2xl font-bold">{currentStreak}</div>
-                <div className="text-blue-100 text-sm">🔥 Day Streak</div>
+                <div className="text-pink-100 text-sm">🔥 Day Streak</div>
               </div>
               <div className="bg-white/10 rounded-lg p-3">
                 <div className="text-2xl font-bold">{totalXP}</div>
-                <div className="text-blue-100 text-sm">⭐ XP Available</div>
+                <div className="text-pink-100 text-sm">⭐ XP Available</div>
               </div>
               <div className="bg-white/10 rounded-lg p-3">
                 <div className="text-2xl font-bold">+{bonusXP}</div>
-                <div className="text-blue-100 text-sm">🎁 Bonus XP</div>
+                <div className="text-pink-100 text-sm">🎁 Bonus XP</div>
               </div>
             </div>
 
@@ -432,7 +432,7 @@ export function DailyChallenge() {
                   isCompleted
                     ? "bg-green-50 border-green-300 shadow-md"
                     : isActive
-                    ? "bg-blue-50 border-blue-300 shadow-lg"
+                    ? "bg-pink-50 border-pink-300 shadow-lg"
                     : "hover:shadow-lg border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -450,7 +450,7 @@ export function DailyChallenge() {
                         </div>
                       )}
                       {!isCompleted && (
-                        <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                        <div className="absolute -top-1 -right-1 bg-pink-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
                           {index + 1}
                         </div>
                       )}
@@ -501,7 +501,7 @@ export function DailyChallenge() {
                           </span>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <span className="text-blue-500">⏱️</span>
+                          <span className="text-pink-500">⏱️</span>
                           <span className="text-gray-600">
                             {task.estimatedTime}
                           </span>
@@ -522,15 +522,15 @@ export function DailyChallenge() {
                           <span className="font-bold">Complete!</span>
                         </div>
                       ) : isActive ? (
-                        <div className="flex items-center space-x-2 text-blue-600 bg-blue-100 px-4 py-2 rounded-lg">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <div className="flex items-center space-x-2 text-pink-600 bg-pink-100 px-4 py-2 rounded-lg">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600"></div>
                           <span className="font-medium">In Progress...</span>
                         </div>
                       ) : (
                         <Button
                           onClick={() => handleStartTask(task)}
                           size="lg"
-                          className="min-w-[140px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                          className="min-w-[140px] bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                         >
                           Start Challenge
                         </Button>

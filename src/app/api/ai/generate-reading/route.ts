@@ -13,7 +13,7 @@ export const POST = withAuth(async (request: NextRequest, params: any, userId: s
     const body = await request.json()
     const { difficulty, topic } = generateReadingSchema.parse(body)
 
-    const exercise = await generateReadingExercise(difficulty, topic)
+    const exercise = await generateReadingExercise(difficulty, topic, userId)
 
     return NextResponse.json({
       success: true,

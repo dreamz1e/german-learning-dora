@@ -115,8 +115,8 @@ export function WritingExercise({
           <CardTitle className="text-lg">Your Writing Task</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-            <p className="text-blue-800 font-medium leading-relaxed">
+          <div className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded-r-lg">
+            <p className="text-pink-900 font-medium leading-relaxed">
               {prompt.prompt}
             </p>
           </div>
@@ -130,7 +130,7 @@ export function WritingExercise({
                   key={index}
                   className="flex items-start space-x-2 text-sm text-gray-600"
                 >
-                  <span className="text-blue-500 mt-1">•</span>
+                  <span className="text-pink-500 mt-1">•</span>
                   <span>{guideline}</span>
                 </li>
               ))}
@@ -239,16 +239,16 @@ export function WritingExercise({
 
       {/* Feedback (shown after submission) */}
       {isSubmitted && (
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-pink-50 border-pink-200">
           <CardContent className="p-6">
             <div className="space-y-3">
-              <h3 className="font-semibold text-green-900 flex items-center space-x-2">
+              <h3 className="font-semibold text-pink-900 flex items-center space-x-2">
                 <span className="text-xl">🎉</span>
                 <span>Writing Completed!</span>
               </h3>
-              <div className="text-green-800 space-y-2">
+              <div className="text-pink-800 space-y-2">
                 <p>Great job on completing your German writing exercise!</p>
-                <div className="bg-white p-3 rounded-lg border border-green-200">
+                <div className="bg-white p-3 rounded-lg border border-pink-200">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="font-medium">Word count:</span>{" "}

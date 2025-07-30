@@ -421,7 +421,7 @@ export function Achievements() {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`${
                     selectedCategory === category.id
-                      ? "bg-blue-600 text-white"
+                      ? "bg-pink-600 text-white"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >

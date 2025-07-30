@@ -16,6 +16,8 @@ interface GrammarExercise {
   correctAnswer: string;
   explanation: string;
   topic: string;
+  germanText?: string;
+  englishText?: string;
 }
 
 export function GrammarPractice() {
@@ -151,7 +153,7 @@ export function GrammarPractice() {
                         ${
                           difficulty === level
                             ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary hover:bg-blue-50"
+                            : "border-border hover:border-primary hover:bg-pink-50"
                         }
                       `}
                     >
@@ -209,7 +211,11 @@ export function GrammarPractice() {
             <Badge variant="outline" className="text-sm">
               AI-Generated Grammar Exercise
             </Badge>
-            <Button variant="outline" onClick={() => setCurrentExercise(null)}>
+            <Button
+              variant="outline"
+              className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              onClick={() => setCurrentExercise(null)}
+            >
               Generate New Exercise
             </Button>
           </div>
@@ -223,6 +229,8 @@ export function GrammarPractice() {
             type={currentExercise.type}
             difficulty={currentExercise.difficulty}
             topic={currentExercise.topic}
+            germanText={currentExercise.germanText}
+            englishText={currentExercise.englishText}
             onComplete={handleExerciseComplete}
             onNextExercise={generateExercise}
           />
@@ -230,15 +238,15 @@ export function GrammarPractice() {
       )}
 
       {/* Tips and Information */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-blue-700">
+          <CardTitle className="flex items-center space-x-2 text-pink-700">
             <span className="text-xl">💡</span>
             <span>Grammar Practice Tips</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-600">
+          <div className="grid md:grid-cols-2 gap-4 text-sm text-pink-600">
             <ul className="space-y-2">
               <li className="flex items-start space-x-2">
                 <span>🎯</span>

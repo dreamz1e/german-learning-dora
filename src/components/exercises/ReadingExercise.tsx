@@ -145,11 +145,11 @@ export function ReadingExercise({
                       w-full text-left p-3 rounded-lg border-2 transition-all duration-200
                       ${
                         !isCompleted &&
-                        "hover:border-primary hover:bg-blue-50 cursor-pointer"
+                        "hover:border-primary hover:bg-pink-50 cursor-pointer"
                       }
                       ${
                         answers[currentQuestion] === option
-                          ? "border-primary bg-blue-50"
+                          ? "border-primary bg-pink-50"
                           : "border-border"
                       }
                       ${
@@ -233,11 +233,11 @@ export function ReadingExercise({
 
               {/* Explanation (shown after completion) */}
               {isCompleted && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <h4 className="font-semibold text-sm text-blue-900 mb-2">
+                <div className="bg-pink-50 border border-pink-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-sm text-pink-900 mb-2">
                     Explanation:
                   </h4>
-                  <p className="text-sm text-blue-800">
+                  <p className="text-sm text-pink-800">
                     {questions[currentQuestion]?.explanation}
                   </p>
                 </div>

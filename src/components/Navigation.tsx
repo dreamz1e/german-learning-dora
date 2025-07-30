@@ -127,7 +127,7 @@ export function Navigation({
       >
         <div className="flex flex-col h-full">
           {/* Logo & User Info */}
-          <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="p-6 border-b bg-gradient-to-r from-pink-50 to-rose-50">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-lg">D</span>
@@ -177,11 +177,11 @@ export function Navigation({
                   }}
                   className={`
                     w-full text-left p-4 rounded-lg transition-all duration-200 touch-manipulation
-                    hover:bg-blue-50 hover:border-blue-200 border border-transparent
-                    active:scale-95 active:bg-blue-100
+                    hover:bg-pink-50 hover:border-pink-200 border border-transparent
+                    active:scale-95 active:bg-pink-100
                     ${
                       currentPage === item.id
-                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        ? "bg-pink-50 border-pink-200 text-pink-700"
                         : "text-gray-700"
                     }
                   `}

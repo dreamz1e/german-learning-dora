@@ -136,9 +136,9 @@ export function ErrorCorrectionExercise({
         }
       } else {
         if (isSelected) {
-          className += "bg-blue-200 text-blue-800";
+          className += "bg-pink-200 text-pink-900";
         } else {
-          className += "hover:bg-gray-100";
+          className += "hover:bg-pink-50";
         }
       }
 
@@ -180,10 +180,10 @@ export function ErrorCorrectionExercise({
             <p className="text-lg text-gray-700 leading-relaxed">
               {instruction}
             </p>
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
-              <p className="text-blue-800 text-sm">
+            <div className="bg-pink-50 border-l-4 border-pink-400 p-3 rounded-r-lg">
+              <p className="text-pink-900 text-sm font-medium">
                 <strong>How to use:</strong> Click on words that contain errors.
-                Selected words will be highlighted in blue.
+                Selected words will be highlighted in pink.
               </p>
             </div>
           </div>
@@ -250,20 +250,20 @@ export function ErrorCorrectionExercise({
 
       {/* Results & Explanations */}
       {isSubmitted && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-pink-50 border-pink-200">
           <CardContent className="p-6">
             <div className="space-y-6">
-              <h3 className="font-semibold text-blue-900 flex items-center space-x-2">
+              <h3 className="font-semibold text-pink-900 flex items-center space-x-2">
                 <span className="text-xl">💡</span>
                 <span>Corrections & Explanations</span>
               </h3>
 
               <div className="space-y-4">
-                <div className="bg-white p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-medium text-blue-800 mb-2">
+                <div className="bg-white p-4 rounded-lg border border-pink-200">
+                  <h4 className="font-medium text-pink-800 mb-2">
                     Correct Version:
                   </h4>
-                  <p className="text-gray-800 text-lg leading-relaxed">
+                  <p className="text-gray-900 text-lg leading-relaxed">
                     {correctText}
                   </p>
                 </div>
@@ -271,7 +271,7 @@ export function ErrorCorrectionExercise({
                 {errors.map((error, index) => (
                   <div
                     key={index}
-                    className="bg-white p-4 rounded-lg border border-blue-200"
+                    className="bg-white p-4 rounded-lg border border-pink-200"
                   >
                     <div className="space-y-2">
                       <div className="flex items-start space-x-3">
@@ -297,7 +297,7 @@ export function ErrorCorrectionExercise({
                           </div>
                         </div>
                       </div>
-                      <p className="text-blue-700 text-sm ml-16">
+                      <p className="text-pink-800 text-sm ml-16">
                         {error.explanation}
                       </p>
                     </div>

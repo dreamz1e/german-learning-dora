@@ -162,7 +162,7 @@ export function SentenceConstructionExercise({
                   ? isCorrect
                     ? "border-green-500 bg-green-50"
                     : "border-red-500 bg-red-50"
-                  : "border-blue-300 bg-blue-50"
+                  : "border-pink-300 bg-pink-50"
               }
             `}
             >
@@ -180,7 +180,7 @@ export function SentenceConstructionExercise({
                         ${
                           isSubmitted
                             ? "cursor-default bg-gray-100 text-gray-700"
-                            : "bg-blue-100 border-blue-300 hover:bg-blue-200 text-blue-800"
+                            : "bg-pink-100 border-pink-300 hover:bg-pink-200 text-pink-900"
                         }
                       `}
                       onClick={() =>
@@ -215,7 +215,7 @@ export function SentenceConstructionExercise({
                         ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed"
                         : isSubmitted
                         ? "bg-gray-200 border-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-white border-gray-300 text-gray-700 hover:border-blue-400 hover:bg-blue-50 cursor-pointer active:scale-95"
+                        : "bg-white border-gray-300 text-gray-700 hover:border-pink-400 hover:bg-pink-50 cursor-pointer active:scale-95"
                     }
                   `}
                 >

@@ -184,7 +184,7 @@ export function WritingPractice() {
                         ${
                           difficulty === level
                             ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary hover:bg-blue-50"
+                            : "border-border hover:border-primary hover:bg-pink-50"
                         }
                       `}
                     >
@@ -209,7 +209,7 @@ export function WritingPractice() {
                         ${
                           exerciseType === type.value
                             ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary hover:bg-blue-50"
+                            : "border-border hover:border-primary hover:bg-pink-50"
                         }
                       `}
                     >

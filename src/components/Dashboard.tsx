@@ -54,7 +54,7 @@ export function Dashboard() {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100">
         <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
 
         {/* Main Content Area */}

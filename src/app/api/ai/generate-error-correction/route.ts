@@ -23,7 +23,8 @@ export const POST = withAuth(
 
       const exercise = await generateErrorCorrectionExercise(
         difficulty,
-        errorType
+        errorType,
+        userId
       );
 
       return NextResponse.json({

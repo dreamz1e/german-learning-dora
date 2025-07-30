@@ -36,7 +36,7 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
       difficulty: "A2-B1",
       estimatedTime: "15-20 min",
       xpReward: 25,
-      color: "from-blue-500 to-blue-600",
+      color: "from-pink-500 to-pink-600",
       available: true,
     },
     {
@@ -80,7 +80,7 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
       difficulty: "A2-B1",
       estimatedTime: "20-30 min",
       xpReward: 35,
-      color: "from-pink-500 to-pink-600",
+      color: "from-rose-500 to-pink-600",
       available: true,
     },
     {
@@ -91,7 +91,7 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
       difficulty: "A2-B1",
       estimatedTime: "15-25 min",
       xpReward: 40,
-      color: "from-indigo-500 to-purple-600",
+      color: "from-pink-600 to-rose-700",
       available: true,
     },
     {
@@ -206,9 +206,9 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
       </div>
 
       {/* Daily Challenge Highlight */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-blue-700">
+          <CardTitle className="flex items-center space-x-2 text-pink-700">
             <span className="text-2xl">🎯</span>
             <span>Today's Challenge</span>
             <Badge variant="success">+50 XP Bonus</Badge>
@@ -216,7 +216,7 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <p className="text-blue-600">
+            <p className="text-pink-600">
               Complete your daily German learning challenge to maintain your
               streak and earn bonus XP!
             </p>

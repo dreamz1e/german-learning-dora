@@ -33,7 +33,8 @@ export const POST = withAuth(
       const exercise = await generateWritingExercise(
         difficulty,
         topic,
-        exerciseType
+        exerciseType,
+        userId
       );
 
       return NextResponse.json({

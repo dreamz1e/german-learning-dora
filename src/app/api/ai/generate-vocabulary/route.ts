@@ -14,7 +14,7 @@ export const POST = withAuth(async (request: NextRequest, params: any, userId: s
     const body = await request.json()
     const { count, difficulty, category } = generateVocabularySchema.parse(body)
 
-    const words = await generateVocabularyWords(count, difficulty, category)
+    const words = await generateVocabularyWords(count, difficulty, category, userId)
 
     return NextResponse.json({
       success: true,
