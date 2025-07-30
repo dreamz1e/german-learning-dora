@@ -1,4 +1,4 @@
-// JSON schemas for structured output
+// JSON Schema definitions for AI-generated content validation
 
 export const GermanExerciseSchema = {
   type: "object",
@@ -26,33 +26,48 @@ export const GermanExerciseSchema = {
     },
     question: {
       type: "string",
+      minLength: 10,
+      maxLength: 500,
     },
     options: {
       type: "array",
       items: {
         type: "string",
+        minLength: 1,
+        maxLength: 200,
       },
+      minItems: 4,
+      maxItems: 4,
     },
     correctAnswer: {
       type: "string",
+      minLength: 1,
+      maxLength: 200,
     },
     explanation: {
       type: "string",
+      minLength: 20,
+      maxLength: 1000,
     },
     topic: {
       type: "string",
+      minLength: 3,
+      maxLength: 100,
     },
     germanText: {
       type: "string",
+      maxLength: 500,
     },
     englishText: {
       type: "string",
+      maxLength: 500,
     },
   },
   required: [
     "type",
     "difficulty",
     "question",
+    "options",
     "correctAnswer",
     "explanation",
     "topic",
@@ -60,67 +75,53 @@ export const GermanExerciseSchema = {
   additionalProperties: false,
 };
 
-export const VocabularyWordSchema = {
-  type: "object",
-  properties: {
-    german: {
-      type: "string",
-    },
-    english: {
-      type: "string",
-    },
-    difficulty: {
-      type: "string",
-      enum: [
-        "A2_BASIC",
-        "A2_INTERMEDIATE",
-        "B1_BASIC",
-        "B1_INTERMEDIATE",
-        "B1_ADVANCED",
-      ],
-    },
-    category: {
-      type: "string",
-    },
-    exampleSentence: {
-      type: "string",
-    },
-    pronunciation: {
-      type: "string",
-    },
-  },
-  required: ["german", "english", "difficulty", "category", "exampleSentence"],
-  additionalProperties: false,
-};
-
 export const VocabularyWordsSchema = {
   type: "array",
-  items: VocabularyWordSchema,
-};
-
-export const ReadingExerciseQuestionSchema = {
-  type: "object",
-  properties: {
-    question: {
-      type: "string",
-    },
-    options: {
-      type: "array",
-      items: {
+  items: {
+    type: "object",
+    properties: {
+      german: {
         type: "string",
+        minLength: 1,
+        maxLength: 100,
       },
-      minItems: 4,
-      maxItems: 4,
+      english: {
+        type: "string",
+        minLength: 1,
+        maxLength: 100,
+      },
+      difficulty: {
+        type: "string",
+        enum: [
+          "A2_BASIC",
+          "A2_INTERMEDIATE",
+          "B1_BASIC",
+          "B1_INTERMEDIATE",
+          "B1_ADVANCED",
+        ],
+      },
+      category: {
+        type: "string",
+        minLength: 3,
+        maxLength: 50,
+      },
+      exampleSentence: {
+        type: "string",
+        minLength: 10,
+        maxLength: 300,
+      },
     },
-    correctAnswer: {
-      type: "string",
-    },
-    explanation: {
-      type: "string",
-    },
+    required: [
+      "german",
+      "english",
+      "difficulty",
+      "category",
+      "exampleSentence",
+    ],
+    additionalProperties: false,
   },
-  required: ["question", "options", "correctAnswer", "explanation"],
-  additionalProperties: false,
+  minItems: 1,
+  maxItems: 10,
 };
 
 export const ReadingExerciseSchema = {
@@ -128,9 +129,13 @@ export const ReadingExerciseSchema = {
   properties: {
     title: {
       type: "string",
+      minLength: 5,
+      maxLength: 100,
     },
     text: {
       type: "string",
+      minLength: 150,
+      maxLength: 500,
     },
     difficulty: {
       type: "string",
@@ -144,11 +149,232 @@ export const ReadingExerciseSchema = {
     },
     questions: {
       type: "array",
-      items: ReadingExerciseQuestionSchema,
+      items: {
+        type: "object",
+        properties: {
+          question: {
+            type: "string",
+            minLength: 10,
+            maxLength: 200,
+          },
+          options: {
+            type: "array",
+            items: {
+              type: "string",
+              minLength: 1,
+              maxLength: 150,
+            },
+            minItems: 4,
+            maxItems: 4,
+          },
+          correctAnswer: {
+            type: "string",
+            minLength: 1,
+            maxLength: 150,
+          },
+          explanation: {
+            type: "string",
+            minLength: 15,
+            maxLength: 500,
+          },
+        },
+        required: ["question", "options", "correctAnswer", "explanation"],
+        additionalProperties: false,
+      },
       minItems: 3,
-      maxItems: 4,
+      maxItems: 5,
     },
   },
   required: ["title", "text", "difficulty", "questions"],
+  additionalProperties: false,
+};
+
+export const WritingExerciseSchema = {
+  type: "object",
+  properties: {
+    prompt: {
+      type: "string",
+      minLength: 20,
+      maxLength: 500,
+    },
+    difficulty: {
+      type: "string",
+      enum: [
+        "A2_BASIC",
+        "A2_INTERMEDIATE",
+        "B1_BASIC",
+        "B1_INTERMEDIATE",
+        "B1_ADVANCED",
+      ],
+    },
+    topic: {
+      type: "string",
+      minLength: 3,
+      maxLength: 100,
+    },
+    guidelines: {
+      type: "array",
+      items: {
+        type: "string",
+        minLength: 10,
+        maxLength: 200,
+      },
+      minItems: 3,
+      maxItems: 8,
+    },
+    minWords: {
+      type: "number",
+      minimum: 20,
+      maximum: 500,
+    },
+    maxWords: {
+      type: "number",
+      minimum: 50,
+      maximum: 1000,
+    },
+  },
+  required: [
+    "prompt",
+    "difficulty",
+    "topic",
+    "guidelines",
+    "minWords",
+    "maxWords",
+  ],
+  additionalProperties: false,
+};
+
+export const SentenceConstructionSchema = {
+  type: "object",
+  properties: {
+    instruction: {
+      type: "string",
+      minLength: 20,
+      maxLength: 300,
+    },
+    correctSentence: {
+      type: "string",
+      minLength: 10,
+      maxLength: 200,
+    },
+    wordBlocks: {
+      type: "array",
+      items: {
+        type: "string",
+        minLength: 1,
+        maxLength: 50,
+      },
+      minItems: 5,
+      maxItems: 20,
+    },
+    difficulty: {
+      type: "string",
+      enum: [
+        "A2_BASIC",
+        "A2_INTERMEDIATE",
+        "B1_BASIC",
+        "B1_INTERMEDIATE",
+        "B1_ADVANCED",
+      ],
+    },
+    topic: {
+      type: "string",
+      minLength: 5,
+      maxLength: 100,
+    },
+    explanation: {
+      type: "string",
+      minLength: 30,
+      maxLength: 500,
+    },
+  },
+  required: [
+    "instruction",
+    "correctSentence",
+    "wordBlocks",
+    "difficulty",
+    "topic",
+    "explanation",
+  ],
+  additionalProperties: false,
+};
+
+export const ErrorCorrectionSchema = {
+  type: "object",
+  properties: {
+    instruction: {
+      type: "string",
+      minLength: 20,
+      maxLength: 300,
+    },
+    incorrectText: {
+      type: "string",
+      minLength: 50,
+      maxLength: 500,
+    },
+    correctText: {
+      type: "string",
+      minLength: 50,
+      maxLength: 500,
+    },
+    errors: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          start: {
+            type: "number",
+            minimum: 0,
+          },
+          end: {
+            type: "number",
+            minimum: 0,
+          },
+          error: {
+            type: "string",
+            minLength: 1,
+            maxLength: 100,
+          },
+          correction: {
+            type: "string",
+            minLength: 1,
+            maxLength: 100,
+          },
+          explanation: {
+            type: "string",
+            minLength: 10,
+            maxLength: 300,
+          },
+        },
+        required: ["start", "end", "error", "correction", "explanation"],
+        additionalProperties: false,
+      },
+      minItems: 2,
+      maxItems: 6,
+    },
+    difficulty: {
+      type: "string",
+      enum: [
+        "A2_BASIC",
+        "A2_INTERMEDIATE",
+        "B1_BASIC",
+        "B1_INTERMEDIATE",
+        "B1_ADVANCED",
+      ],
+    },
+    topic: {
+      type: "string",
+      minLength: 5,
+      maxLength: 100,
+    },
+  },
+  required: [
+    "instruction",
+    "incorrectText",
+    "correctText",
+    "errors",
+    "difficulty",
+    "topic",
+  ],
   additionalProperties: false,
 };

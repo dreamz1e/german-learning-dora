@@ -75,6 +75,12 @@ export function Navigation({
       description: "Writing Practice",
     },
     {
+      id: "advanced",
+      label: "Advanced",
+      icon: "🎯",
+      description: "Advanced Exercises",
+    },
+    {
       id: "achievements",
       label: "Achievements",
       icon: "🏆",
