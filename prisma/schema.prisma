@@ -1,0 +1,189 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // User Profile
+  profile UserProfile?
+
+  // Learning Progress
+  progress        UserProgress?
+  exerciseResults ExerciseResult[]
+  achievements    UserAchievement[]
+  dailyStreak     DailyStreak?
+
+  @@map("users")
+}
+
+model UserProfile {
+  id           String @id @default(cuid())
+  userId       String @unique
+  displayName  String?
+  avatar       String?
+  nativeLanguage String @default("en")
+  targetLanguage String @default("de")
+  timezone     String @default("UTC")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// Gamification & Progress
+model UserProgress {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  currentLevel  Int      @default(1)
+  totalXP       Int      @default(0)
+  weeklyXP      Int      @default(0)
+  lastActive    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_progress")
+}
+
+model DailyStreak {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastActiveDate DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_streaks")
+}
+
+// Achievement System
+model Achievement {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  category    AchievementCategory
+  icon        String
+  xpReward    Int    @default(0)
+  condition   Json   // Flexible conditions stored as JSON
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// Learning Content
+model Exercise {
+  id          String      @id @default(cuid())
+  type        ExerciseType
+  difficulty  DifficultyLevel
+  topic       String
+  question    String
+  options     Json?       // For multiple choice, stored as JSON array
+  correctAnswer String
+  explanation String?
+  xpValue     Int         @default(10)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  results ExerciseResult[]
+
+  @@map("exercises")
+}
+
+model ExerciseResult {
+  id          String   @id @default(cuid())
+  userId      String
+  exerciseId  String
+  userAnswer  String
+  isCorrect   Boolean
+  timeSpent   Int      // in seconds
+  completedAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@map("exercise_results")
+}
+
+// Daily Content
+model DailyChallenge {
+  id          String   @id @default(cuid())
+  date        DateTime @unique
+  exerciseIds Json     // Array of exercise IDs for that day
+  bonusXP     Int      @default(50)
+  createdAt   DateTime @default(now())
+
+  @@map("daily_challenges")
+}
+
+// Vocabulary Management
+model VocabularyWord {
+  id               String @id @default(cuid())
+  german           String
+  english          String
+  difficulty       DifficultyLevel
+  category         String
+  exampleSentence  String?
+  audioUrl         String?
+  createdAt        DateTime @default(now())
+
+  @@map("vocabulary_words")
+}
+
+// Enums
+enum AchievementCategory {
+  STREAK
+  XP_MILESTONE
+  EXERCISE_COUNT
+  PERFECT_SCORE
+  DAILY_CHALLENGE
+  SPECIAL
+}
+
+enum ExerciseType {
+  MULTIPLE_CHOICE
+  FILL_BLANK
+  TRANSLATION
+  READING_COMPREHENSION
+  VOCABULARY
+  GRAMMAR
+  LISTENING
+}
+
+enum DifficultyLevel {
+  A2_BASIC
+  A2_INTERMEDIATE
+  B1_BASIC
+  B1_INTERMEDIATE
+  B1_ADVANCED
+}
