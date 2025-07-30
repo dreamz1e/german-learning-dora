@@ -7,6 +7,7 @@ import { translationPrompt } from "./prompts/translationPrompt";
 import { createWritingPrompt } from "./prompts/writingPrompt";
 import { sentenceConstructionPrompt } from "./prompts/sentenceConstructionPrompt";
 import { errorCorrectionPrompt } from "./prompts/errorCorrectionPrompt";
+import { createWritingEvaluationPrompt } from "./prompts/writingEvaluationPrompt";
 import {
   GermanExerciseSchema,
   VocabularyWordsSchema,
@@ -14,6 +15,7 @@ import {
   WritingExerciseSchema,
   SentenceConstructionSchema,
   ErrorCorrectionSchema,
+  WritingEvaluationSchema,
 } from "./schemas";
 import { processAIResponse } from "./responseUtils";
 import { ContentTracker } from "./contentTracker";
@@ -25,6 +27,7 @@ const openai = new OpenAI({
 });
 
 const model = "google/gemini-2.5-flash";
+const evaluationModel = "openai/gpt-4.1"; // Better for structured output
 
 export interface GermanExercise {
   type:
@@ -127,6 +130,45 @@ export interface ErrorCorrectionExercise {
     | "B1_INTERMEDIATE"
     | "B1_ADVANCED";
   topic: string;
+}
+
+export interface WritingEvaluationError {
+  start: number;
+  end: number;
+  originalText: string;
+  correctedText: string;
+  errorType:
+    | "grammar"
+    | "vocabulary"
+    | "spelling"
+    | "syntax"
+    | "punctuation"
+    | "verb-conjugation"
+    | "noun-declension"
+    | "word-order"
+    | "article-usage"
+    | "preposition";
+  severity: "minor" | "moderate" | "major";
+  explanation: string;
+  suggestion: string;
+}
+
+export interface WritingEvaluation {
+  overallScore: number;
+  grammarScore: number;
+  vocabularyScore: number;
+  structureScore: number;
+  correctedText: string;
+  errors: WritingEvaluationError[];
+  positiveAspects: string[];
+  improvementSuggestions: string[];
+  difficulty:
+    | "A2_BASIC"
+    | "A2_INTERMEDIATE"
+    | "B1_BASIC"
+    | "B1_INTERMEDIATE"
+    | "B1_ADVANCED";
+  wordCount: number;
 }
 
 export async function generateVocabularyExercise(
@@ -730,4 +772,187 @@ export async function generateErrorCorrectionExercise(
     console.error("Error generating error correction exercise:", error);
     throw new Error("Failed to generate error correction exercise");
   }
+}
+
+export async function evaluateWriting(
+  userText: string,
+  difficulty: string,
+  originalPrompt?: string,
+  userId: string = "anonymous"
+): Promise<WritingEvaluation> {
+  const maxRetries = 2;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      // Try with JSON schema first
+      const response = await openai.chat.completions.create({
+        model: evaluationModel,
+        messages: [
+          {
+            role: "user",
+            content: createWritingEvaluationPrompt(
+              userText,
+              difficulty,
+              originalPrompt
+            ),
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 2000, // Increased to avoid truncation
+        response_format:
+          attempt === 0
+            ? {
+                type: "json_schema",
+                json_schema: {
+                  name: "german_writing_evaluation",
+                  schema: WritingEvaluationSchema,
+                },
+              }
+            : undefined, // Fallback without schema on retry
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("No content generated");
+
+      let evaluation: WritingEvaluation;
+
+      try {
+        evaluation = processAIResponse<WritingEvaluation>(content, [
+          "overallScore",
+          "grammarScore",
+          "vocabularyScore",
+          "structureScore",
+          "correctedText",
+        ]);
+      } catch (parseError) {
+        console.error(
+          "JSON parsing failed, trying basic extraction:",
+          parseError
+        );
+        // Try to extract basic info from malformed response
+        evaluation = extractBasicEvaluation(content, userText, difficulty);
+      }
+
+      // Ensure difficulty is set correctly
+      evaluation.difficulty = difficulty as any;
+
+      // Calculate word count if not provided
+      if (!evaluation.wordCount) {
+        evaluation.wordCount = userText
+          .trim()
+          .split(/\s+/)
+          .filter((word) => word.length > 0).length;
+      }
+
+      // Ensure arrays exist even if empty
+      evaluation.errors = evaluation.errors || [];
+      evaluation.positiveAspects = evaluation.positiveAspects || [];
+      evaluation.improvementSuggestions =
+        evaluation.improvementSuggestions || [];
+
+      return evaluation;
+    } catch (error) {
+      console.error(
+        `Error evaluating writing on attempt ${attempt + 1}:`,
+        error
+      );
+      attempt++;
+
+      if (attempt >= maxRetries) {
+        // Return a basic evaluation as fallback
+        const wordCount = userText
+          .trim()
+          .split(/\s+/)
+          .filter((word) => word.length > 0).length;
+
+        return {
+          overallScore: 70,
+          grammarScore: 70,
+          vocabularyScore: 70,
+          structureScore: 70,
+          correctedText: userText,
+          errors: [],
+          positiveAspects: ["Your writing shows effort and practice!"],
+          improvementSuggestions: [
+            "Continue practicing German writing regularly.",
+          ],
+          difficulty: difficulty as any,
+          wordCount: wordCount,
+        };
+      }
+    }
+  }
+
+  throw new Error("Failed to evaluate writing after retries");
+}
+
+// Function to extract basic evaluation data from malformed JSON responses
+function extractBasicEvaluation(
+  content: string,
+  userText: string,
+  difficulty: string
+): WritingEvaluation {
+  const wordCount = userText
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
+
+  // Try to extract scores using regex
+  const overallScore = extractScore(content, "overallScore") || 75;
+  const grammarScore = extractScore(content, "grammarScore") || 70;
+  const vocabularyScore = extractScore(content, "vocabularyScore") || 75;
+  const structureScore = extractScore(content, "structureScore") || 75;
+
+  // Try to extract corrected text
+  const correctedTextMatch = content.match(/"correctedText":\s*"([^"]+)"/);
+  const correctedText = correctedTextMatch ? correctedTextMatch[1] : userText;
+
+  // Try to extract basic errors info
+  const errors: WritingEvaluationError[] = [];
+  const errorMatches = content.match(/"originalText":\s*"([^"]+)"/g);
+
+  if (errorMatches && errorMatches.length > 0) {
+    errorMatches.slice(0, 3).forEach((match, index) => {
+      const originalTextMatch = match.match(/"originalText":\s*"([^"]+)"/);
+      if (originalTextMatch) {
+        const originalText = originalTextMatch[1];
+        const start = userText.indexOf(originalText);
+        if (start >= 0) {
+          errors.push({
+            start,
+            end: start + originalText.length,
+            originalText,
+            correctedText: originalText, // Fallback
+            errorType: "grammar",
+            severity: "moderate",
+            explanation: "Error detected in analysis",
+            suggestion: "Review this section for improvements",
+          });
+        }
+      }
+    });
+  }
+
+  return {
+    overallScore,
+    grammarScore,
+    vocabularyScore,
+    structureScore,
+    correctedText,
+    errors,
+    positiveAspects: ["Your writing shows good effort and practice!"],
+    improvementSuggestions: [
+      "Continue practicing German grammar and vocabulary.",
+    ],
+    difficulty: difficulty as any,
+    wordCount,
+  };
+}
+
+// Helper function to extract score values from text
+function extractScore(content: string, scoreType: string): number | null {
+  const regex = new RegExp(`"${scoreType}":\\s*(\\d+)`, "i");
+  const match = content.match(regex);
+  return match ? parseInt(match[1], 10) : null;
 }

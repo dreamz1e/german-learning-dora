@@ -378,3 +378,104 @@ export const ErrorCorrectionSchema = {
   ],
   additionalProperties: false,
 };
+
+export const WritingEvaluationSchema = {
+  type: "object",
+  properties: {
+    overallScore: {
+      type: "integer",
+      minimum: 0,
+      maximum: 100,
+    },
+    grammarScore: {
+      type: "integer",
+      minimum: 0,
+      maximum: 100,
+    },
+    vocabularyScore: {
+      type: "integer",
+      minimum: 0,
+      maximum: 100,
+    },
+    structureScore: {
+      type: "integer",
+      minimum: 0,
+      maximum: 100,
+    },
+    correctedText: {
+      type: "string",
+    },
+    errors: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          start: {
+            type: "integer",
+          },
+          end: {
+            type: "integer",
+          },
+          originalText: {
+            type: "string",
+          },
+          correctedText: {
+            type: "string",
+          },
+          errorType: {
+            type: "string",
+          },
+          severity: {
+            type: "string",
+          },
+          explanation: {
+            type: "string",
+          },
+          suggestion: {
+            type: "string",
+          },
+        },
+        required: [
+          "start",
+          "end",
+          "originalText",
+          "correctedText",
+          "errorType",
+          "severity",
+          "explanation",
+          "suggestion",
+        ],
+      },
+    },
+    positiveAspects: {
+      type: "array",
+      items: {
+        type: "string",
+      },
+    },
+    improvementSuggestions: {
+      type: "array",
+      items: {
+        type: "string",
+      },
+    },
+    difficulty: {
+      type: "string",
+    },
+    wordCount: {
+      type: "integer",
+    },
+  },
+  required: [
+    "overallScore",
+    "grammarScore",
+    "vocabularyScore",
+    "structureScore",
+    "correctedText",
+    "errors",
+    "positiveAspects",
+    "improvementSuggestions",
+    "difficulty",
+    "wordCount",
+  ],
+};

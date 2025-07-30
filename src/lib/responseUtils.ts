@@ -36,23 +36,24 @@ function cleanJsonResponse(content: string): string {
   // Remove any leading/trailing whitespace
   cleaned = cleaned.trim();
 
-  // If the content starts with { or [, it's likely already valid JSON
-  if (cleaned.startsWith("{") || cleaned.startsWith("[")) {
-    return cleaned;
-  }
+  // Fix common JSON string issues by removing problematic characters
+  // Remove unescaped newlines, tabs, and carriage returns from string values
+  cleaned = cleaned.replace(/([^\\])\n/g, '$1\\n')
+                   .replace(/([^\\])\r/g, '$1\\r')
+                   .replace(/([^\\])\t/g, '$1\\t');
 
-  // Ensure we have valid JSON by finding the first { or [
+  // Find JSON start
   const jsonStart = Math.max(cleaned.indexOf("{"), cleaned.indexOf("["));
   if (jsonStart > 0) {
     cleaned = cleaned.substring(jsonStart);
   }
 
-  // Find the last } or ] and remove anything after it
-  let jsonEnd = -1;
+  // Try to fix incomplete JSON by adding missing closing braces/brackets
   let braceCount = 0;
   let bracketCount = 0;
   let inString = false;
   let escapeNext = false;
+  let lastValidIndex = -1;
 
   for (let i = 0; i < cleaned.length; i++) {
     const char = cleaned[i];
@@ -73,24 +74,42 @@ function cleanJsonResponse(content: string): string {
     }
 
     if (!inString) {
-      if (char === "{") braceCount++;
-      else if (char === "}") {
+      if (char === "{") {
+        braceCount++;
+      } else if (char === "}") {
         braceCount--;
         if (braceCount === 0 && bracketCount === 0) {
-          jsonEnd = i;
+          lastValidIndex = i;
         }
-      } else if (char === "[") bracketCount++;
-      else if (char === "]") {
+      } else if (char === "[") {
+        bracketCount++;
+      } else if (char === "]") {
         bracketCount--;
         if (braceCount === 0 && bracketCount === 0) {
-          jsonEnd = i;
+          lastValidIndex = i;
         }
       }
     }
   }
 
-  if (jsonEnd > 0) {
-    cleaned = cleaned.substring(0, jsonEnd + 1);
+  // If we found a complete JSON object, use it
+  if (lastValidIndex > 0) {
+    cleaned = cleaned.substring(0, lastValidIndex + 1);
+  } else if (braceCount > 0 || bracketCount > 0) {
+    // Try to close incomplete JSON
+    while (braceCount > 0) {
+      cleaned += "}";
+      braceCount--;
+    }
+    while (bracketCount > 0) {
+      cleaned += "]";
+      bracketCount--;
+    }
+  }
+
+  // Fix unterminated strings at the end
+  if (inString) {
+    cleaned += '"';
   }
 
   return cleaned;
@@ -174,3 +193,4 @@ export function sanitizeString(str: string, maxLength: number = 1000): string {
 
   return sanitized;
 }
+
