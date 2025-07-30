@@ -270,7 +270,11 @@ export function WritingPractice() {
             <Badge variant="outline" className="text-sm">
               AI-Generated Writing Prompt
             </Badge>
-            <Button variant="outline" onClick={() => setCurrentPrompt(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPrompt(null)}
+              className="bg-white text-gray-800 border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-400 font-medium"
+            >
               Generate New Prompt
             </Button>
           </div>

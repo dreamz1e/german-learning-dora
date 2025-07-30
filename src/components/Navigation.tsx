@@ -197,7 +197,7 @@ export function Navigation({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <p className="text-xs text-gray-700 mt-1 font-medium">
                         {item.description}
                       </p>
                     </div>
@@ -210,7 +210,7 @@ export function Navigation({
           {/* Bottom Actions */}
           <div className="p-4 border-t">
             <div className="space-y-2">
-              <div className="text-xs text-gray-600 text-center">
+              <div className="text-xs text-gray-800 text-center font-medium">
                 Welcome back, {user.profile?.displayName || user.username}!
               </div>
               <Button

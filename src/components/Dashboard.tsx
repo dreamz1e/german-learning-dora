@@ -57,7 +57,7 @@ export function Dashboard() {
         {/* Main Content Area */}
         <main className="lg:ml-80 min-h-screen">
           {/* Top Header */}
-          <header className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-30">
+          <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-30 shadow-sm">
             <div className="px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="lg:hidden">
@@ -65,12 +65,12 @@ export function Dashboard() {
                 </div>
 
                 <div className="flex items-center space-x-4 ml-auto">
-                  <div className="hidden sm:block text-sm text-muted-foreground">
+                  <div className="hidden sm:block text-sm text-gray-700 font-medium">
                     Welcome back, {user.profile?.displayName || user.username}!
                   </div>
                   <button
                     onClick={logout}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900 rounded-lg transition-all duration-200 border border-gray-300"
                   >
                     Sign Out
                   </button>

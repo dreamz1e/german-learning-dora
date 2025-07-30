@@ -1,84 +1,93 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { useToast } from '@/components/ui/Toast'
+import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { useToast } from "@/components/ui/Toast";
 
 interface WritingPrompt {
-  prompt: string
-  difficulty: string
-  topic: string
-  guidelines: string[]
-  minWords: number
-  maxWords: number
+  prompt: string;
+  difficulty: string;
+  topic: string;
+  guidelines: string[];
+  minWords: number;
+  maxWords: number;
 }
 
 interface WritingExerciseProps {
-  prompt: WritingPrompt
-  onComplete: (wordCount: number, timeSpent: number) => void
-  onNewPrompt: () => void
+  prompt: WritingPrompt;
+  onComplete: (wordCount: number, timeSpent: number) => void;
+  onNewPrompt: () => void;
 }
 
-export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExerciseProps) {
-  const [text, setText] = useState('')
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [startTime] = useState(Date.now())
-  const { addToast } = useToast()
+export function WritingExercise({
+  prompt,
+  onComplete,
+  onNewPrompt,
+}: WritingExerciseProps) {
+  const [text, setText] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [startTime] = useState(Date.now());
+  const { addToast } = useToast();
 
-  const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length
-  const isValidLength = wordCount >= prompt.minWords && wordCount <= prompt.maxWords
+  const wordCount = text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
+  const isValidLength =
+    wordCount >= prompt.minWords && wordCount <= prompt.maxWords;
 
   const handleSubmit = () => {
     if (!isValidLength) {
       addToast({
-        type: 'warning',
-        title: 'Word Count',
+        type: "warning",
+        title: "Word Count",
         message: `Please write between ${prompt.minWords} and ${prompt.maxWords} words.`,
-        duration: 3000
-      })
-      return
+        duration: 3000,
+      });
+      return;
     }
 
     if (text.trim().length < 10) {
       addToast({
-        type: 'warning',
-        title: 'Too Short',
-        message: 'Please write more content before submitting.',
-        duration: 3000
-      })
-      return
+        type: "warning",
+        title: "Too Short",
+        message: "Please write more content before submitting.",
+        duration: 3000,
+      });
+      return;
     }
 
-    const timeSpent = Math.round((Date.now() - startTime) / 1000)
-    setIsSubmitted(true)
-    onComplete(wordCount, timeSpent)
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    setIsSubmitted(true);
+    onComplete(wordCount, timeSpent);
 
     addToast({
-      type: 'success',
-      title: 'Writing Submitted!',
+      type: "success",
+      title: "Writing Submitted!",
       message: `Great work! You wrote ${wordCount} words.`,
-      duration: 4000
-    })
-  }
+      duration: 4000,
+    });
+  };
 
   const handleNewPrompt = () => {
-    setText('')
-    setIsSubmitted(false)
-    onNewPrompt()
-  }
+    setText("");
+    setIsSubmitted(false);
+    onNewPrompt();
+  };
 
   const getDifficultyText = (diff: string) => {
-    return diff.replace('_', ' ')
-  }
+    return diff.replace("_", " ");
+  };
 
   const getWordCountColor = () => {
-    if (wordCount < prompt.minWords) return 'text-red-600'
-    if (wordCount > prompt.maxWords) return 'text-red-600'
-    if (wordCount >= prompt.minWords && wordCount <= prompt.maxWords) return 'text-green-600'
-    return 'text-gray-600'
-  }
+    if (wordCount < prompt.minWords) return "text-red-600";
+    if (wordCount > prompt.maxWords) return "text-red-600";
+    if (wordCount >= prompt.minWords && wordCount <= prompt.maxWords)
+      return "text-green-600";
+    return "text-gray-600";
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -94,9 +103,7 @@ export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExer
               <Badge variant="outline" className="capitalize">
                 {prompt.topic}
               </Badge>
-              <Badge variant="secondary">
-                Writing Practice
-              </Badge>
+              <Badge variant="secondary">Writing Practice</Badge>
             </div>
           </div>
         </CardHeader>
@@ -119,7 +126,10 @@ export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExer
             <h3 className="font-semibold text-foreground">Guidelines:</h3>
             <ul className="space-y-2">
               {prompt.guidelines.map((guideline, index) => (
-                <li key={index} className="flex items-start space-x-2 text-sm text-gray-600">
+                <li
+                  key={index}
+                  className="flex items-start space-x-2 text-sm text-gray-600"
+                >
                   <span className="text-blue-500 mt-1">•</span>
                   <span>{guideline}</span>
                 </li>
@@ -150,7 +160,7 @@ export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExer
               </span>
               {!isValidLength && wordCount > 0 && (
                 <span className="text-xs text-red-600">
-                  {wordCount < prompt.minWords ? 'Too short' : 'Too long'}
+                  {wordCount < prompt.minWords ? "Too short" : "Too long"}
                 </span>
               )}
             </div>
@@ -164,9 +174,14 @@ export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExer
               disabled={isSubmitted}
               placeholder="Start writing your German text here..."
               className={`
-                w-full h-64 p-4 border rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-primary
-                ${isSubmitted ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}
-                font-mono text-sm leading-relaxed
+                w-full h-64 p-4 border-2 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-primary
+                ${
+                  isSubmitted
+                    ? "bg-gray-50 cursor-not-allowed text-gray-600 border-gray-300"
+                    : "bg-white text-gray-900 border-gray-300 hover:border-gray-400"
+                }
+                font-sans text-base leading-relaxed placeholder:text-gray-500
+                transition-all duration-200
               `}
             />
 
@@ -175,10 +190,17 @@ export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExer
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    isValidLength ? 'bg-green-500' : wordCount === 0 ? 'bg-gray-300' : 'bg-red-500'
+                    isValidLength
+                      ? "bg-green-500"
+                      : wordCount === 0
+                      ? "bg-gray-300"
+                      : "bg-red-500"
                   }`}
                   style={{
-                    width: `${Math.min((wordCount / prompt.maxWords) * 100, 100)}%`
+                    width: `${Math.min(
+                      (wordCount / prompt.maxWords) * 100,
+                      100
+                    )}%`,
                   }}
                 />
               </div>
@@ -229,21 +251,25 @@ export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExer
                 <div className="bg-white p-3 rounded-lg border border-green-200">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">Word count:</span> {wordCount}
+                      <span className="font-medium">Word count:</span>{" "}
+                      {wordCount}
                     </div>
                     <div>
-                      <span className="font-medium">Time spent:</span> {Math.round((Date.now() - startTime) / 60000)} minutes
+                      <span className="font-medium">Time spent:</span>{" "}
+                      {Math.round((Date.now() - startTime) / 60000)} minutes
                     </div>
                     <div>
                       <span className="font-medium">Topic:</span> {prompt.topic}
                     </div>
                     <div>
-                      <span className="font-medium">Level:</span> {getDifficultyText(prompt.difficulty)}
+                      <span className="font-medium">Level:</span>{" "}
+                      {getDifficultyText(prompt.difficulty)}
                     </div>
                   </div>
                 </div>
                 <p className="text-sm">
-                  <strong>Tip:</strong> Try reading your text aloud to practice pronunciation and identify areas for improvement.
+                  <strong>Tip:</strong> Try reading your text aloud to practice
+                  pronunciation and identify areas for improvement.
                 </p>
               </div>
             </div>
@@ -251,5 +277,5 @@ export function WritingExercise({ prompt, onComplete, onNewPrompt }: WritingExer
         </Card>
       )}
     </div>
-  )
+  );
 }
