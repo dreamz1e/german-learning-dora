@@ -47,6 +47,9 @@ export function VocabularyBuilder({
   const [category, setCategory] = useState("");
   const [mode, setMode] = useState<"exercise" | "words">("exercise");
   const [isDailyChallenge, setIsDailyChallenge] = useState(false);
+  const [vocabularyDirection, setVocabularyDirection] = useState<
+    "german-to-english" | "english-to-german"
+  >("german-to-english");
   const [batchInfo, setBatchInfo] = useState<{
     topic: string;
     remaining: number;
@@ -100,6 +103,7 @@ export function VocabularyBuilder({
           type: "vocabulary",
           difficulty,
           topic: category || undefined,
+          vocabularyDirection,
         }),
       });
 
@@ -373,6 +377,51 @@ export function VocabularyBuilder({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Translation Direction */}
+            {!isDailyChallenge && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">
+                  Translation Direction
+                </label>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setVocabularyDirection("german-to-english");
+                      setCurrentExercise(null);
+                      setVocabularyWords([]);
+                    }}
+                    className={`
+                      flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors
+                      ${
+                        vocabularyDirection === "german-to-english"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:border-primary hover:bg-pink-50"
+                      }
+                    `}
+                  >
+                    🇩🇪 → 🇺🇸 German to English
+                  </button>
+                  <button
+                    onClick={() => {
+                      setVocabularyDirection("english-to-german");
+                      setCurrentExercise(null);
+                      setVocabularyWords([]);
+                    }}
+                    className={`
+                      flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors
+                      ${
+                        vocabularyDirection === "english-to-german"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:border-primary hover:bg-pink-50"
+                      }
+                    `}
+                  >
+                    🇺🇸 → 🇩🇪 English to German
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-2 gap-6">
               {/* Difficulty Selection */}
               <div className="space-y-3">

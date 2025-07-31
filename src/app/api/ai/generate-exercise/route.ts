@@ -20,6 +20,9 @@ const generateExerciseSchema = z.object({
   ]),
   topic: z.string().optional(),
   grammarTopic: z.string().optional(),
+  vocabularyDirection: z
+    .enum(["german-to-english", "english-to-german"])
+    .default("german-to-english"),
   translationDirection: z
     .enum(["german-to-english", "english-to-german"])
     .optional(),
@@ -35,6 +38,7 @@ export const POST = withAuth(
         difficulty,
         topic,
         grammarTopic,
+        vocabularyDirection,
         translationDirection,
         useBatchSystem,
       } = generateExerciseSchema.parse(body);
@@ -49,14 +53,16 @@ export const POST = withAuth(
               "vocabulary",
               userId,
               difficulty,
-              topic
+              topic,
+              vocabularyDirection
             );
             batchInfo = getCurrentBatchInfo("vocabulary", userId);
           } else {
             exercise = await generateVocabularyExercise(
               difficulty,
               topic,
-              userId
+              userId,
+              vocabularyDirection
             );
           }
           break;

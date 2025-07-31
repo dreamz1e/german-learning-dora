@@ -134,17 +134,41 @@ export function ExerciseContainer({
               </h2>
 
               {/* Context Sentence (if provided) */}
-              {germanText && (
+              {(germanText || englishText) && (
                 <div className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded-r-lg">
-                  <p className="text-pink-900 font-medium italic">
-                    "{germanText}"
-                  </p>
-                  {/* Show English translation only after answer is submitted */}
-                  {isAnswered && englishText && (
-                    <p className="text-pink-700 text-sm mt-2">
-                      Translation: "{englishText}"
-                    </p>
-                  )}
+                  {(() => {
+                    // Determine direction based on question content
+                    const isGermanToEnglish =
+                      question.includes("mean in English") ||
+                      question.includes("German word");
+                    const isEnglishToGerman =
+                      question.includes("German translation of") ||
+                      question.includes("English word");
+
+                    // Show context text based on direction
+                    const contextText = isEnglishToGerman
+                      ? englishText
+                      : germanText;
+                    const translationText = isEnglishToGerman
+                      ? germanText
+                      : englishText;
+
+                    return (
+                      <>
+                        {contextText && (
+                          <p className="text-pink-900 font-medium italic">
+                            "{contextText}"
+                          </p>
+                        )}
+                        {/* Show translation only after answer is submitted */}
+                        {isAnswered && translationText && (
+                          <p className="text-pink-700 text-sm mt-2">
+                            Translation: "{translationText}"
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>

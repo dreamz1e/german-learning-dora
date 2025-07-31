@@ -1,7 +1,8 @@
 export function vocabularyPrompt(
   difficulty: string,
   topic?: string,
-  variationSeed?: string
+  variationSeed?: string,
+  direction: "german-to-english" | "english-to-german" = "german-to-english"
 ): string {
   // Simple hash function for consistent variation
   function hashString(str: string): number {
@@ -76,9 +77,12 @@ export function vocabularyPrompt(
   const selectedCharacters = characterTypes[characterIndex];
   const selectedSetting = contextSettings[settingIndex];
 
+  const isGermanToEnglish = direction === "german-to-english";
+
   return `
 Create a high-quality German vocabulary exercise for ${difficulty} level learners (English speakers).
 ${topic ? `Focus on the topic: ${topic}` : "Use practical, everyday vocabulary"}
+Translation direction: ${direction}
 
 VARIATION CONTEXT (to ensure unique content):
 - Scenario focus: ${selectedScenario}
@@ -89,12 +93,18 @@ VARIATION CONTEXT (to ensure unique content):
 IMPORTANT: Use the above context elements to create a UNIQUE vocabulary exercise that feels fresh and different from previous generations. Incorporate the scenario, characters, and setting naturally into your word choice and example sentences.
 
 Requirements:
-- Present a German word with multiple choice English translations
+${
+  isGermanToEnglish
+    ? `- Present a German word with multiple choice English translations
 - Include 1 correct ENGLISH TRANSLATION and 3 plausible but incorrect ENGLISH OPTIONS
+- The correctAnswer field MUST be the English translation of the German word, NOT the German word itself`
+    : `- Present an English word with multiple choice German translations
+- Include 1 correct GERMAN TRANSLATION and 3 plausible but incorrect GERMAN OPTIONS
+- The correctAnswer field MUST be the German translation of the English word, NOT the English word itself`
+}
 - Provide a clear, educational explanation with example usage
 - Include a German example sentence and its English translation
 - Make distractors believable but clearly wrong to knowledgeable speakers
-- The correctAnswer field MUST be the English translation of the German word, NOT the German word itself
 
 Guidelines for difficulty:
 - A2_BASIC: Common nouns, basic verbs, everyday concepts
@@ -114,16 +124,32 @@ Return ONLY a valid JSON object with this exact structure:
 {
   "type": "vocabulary",
   "difficulty": "${difficulty}",
-  "question": "What does '[German word]' mean in English?",
-  "options": ["correct English translation", "incorrect English option 1", "incorrect English option 2", "incorrect English option 3"],
-  "correctAnswer": "correct English translation",
+  "question": "${
+    isGermanToEnglish
+      ? "What does '[German word]' mean in English?"
+      : "What is the German translation of '[English word]'?"
+  }",
+  "options": [${
+    isGermanToEnglish
+      ? '"correct English translation", "incorrect English option 1", "incorrect English option 2", "incorrect English option 3"'
+      : '"correct German translation", "incorrect German option 1", "incorrect German option 2", "incorrect German option 3"'
+  }],
+  "correctAnswer": "${
+    isGermanToEnglish
+      ? "correct English translation"
+      : "correct German translation"
+  }",
   "explanation": "Brief explanation of the word's meaning and usage context, incorporating scenario: ${selectedScenario}",
   "topic": "word category relevant to the context",
   "germanText": "Natural German sentence using the word in the context of ${selectedSetting} with ${selectedCharacters}",
   "englishText": "English translation of the German sentence"
 }
 
-CRITICAL: The correctAnswer MUST be an English translation of the German word, never the German word itself!
+CRITICAL: ${
+    isGermanToEnglish
+      ? "The correctAnswer MUST be an English translation of the German word, never the German word itself!"
+      : "The correctAnswer MUST be a German translation of the English word, never the English word itself!"
+  }
 
 Make it educational, practical, and culturally relevant to German-speaking countries. Ensure ORIGINALITY by incorporating the variation context naturally.`;
 }

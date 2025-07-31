@@ -92,7 +92,8 @@ async function generateExerciseWithRetry<T>(
 export async function generateBatchVocabularyExercises(
   difficulty: string,
   userId: string = "anonymous",
-  topic?: string
+  topic?: string,
+  direction: "german-to-english" | "english-to-german" = "german-to-english"
 ): Promise<BatchExercises> {
   const manager = exerciseCycleManagers.get(`vocab_${userId}`) || {
     currentBatch: null,
@@ -121,7 +122,8 @@ export async function generateBatchVocabularyExercises(
         content: batchVocabularyPrompt(
           difficulty,
           selectedTopic,
-          variationSeed
+          variationSeed,
+          direction
         ),
       },
     ],
@@ -264,7 +266,8 @@ export async function getNextExercise(
   exerciseType: "vocabulary" | "grammar",
   userId: string,
   difficulty: string,
-  topic?: string
+  topic?: string,
+  direction?: "german-to-english" | "english-to-german"
 ): Promise<GermanExercise> {
   const key = `${exerciseType}_${userId}`;
   let manager =
@@ -280,7 +283,12 @@ export async function getNextExercise(
 
     manager.currentBatch =
       exerciseType === "vocabulary"
-        ? await generateBatchVocabularyExercises(difficulty, userId, topic)
+        ? await generateBatchVocabularyExercises(
+            difficulty,
+            userId,
+            topic,
+            direction
+          )
         : await generateBatchGrammarExercises(difficulty, userId, topic);
 
     manager.currentIndex = 0;
@@ -313,7 +321,8 @@ export function getCurrentBatchInfo(
 export async function generateVocabularyExercise(
   difficulty: string,
   topic?: string,
-  userId: string = "anonymous"
+  userId: string = "anonymous",
+  direction: "german-to-english" | "english-to-german" = "german-to-english"
 ): Promise<GermanExercise> {
   const maxRetries = 3;
   let attempt = 0;
@@ -336,7 +345,12 @@ export async function generateVocabularyExercise(
         messages: [
           {
             role: "user",
-            content: vocabularyPrompt(difficulty, topic, variationSeed),
+            content: vocabularyPrompt(
+              difficulty,
+              topic,
+              variationSeed,
+              direction
+            ),
           },
         ],
         temperature: Math.min(temperature, 1.0),
