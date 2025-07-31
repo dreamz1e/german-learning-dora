@@ -11,6 +11,7 @@ import { ReadingComprehension } from "@/components/pages/ReadingComprehension";
 import { WritingPractice } from "@/components/pages/WritingPractice";
 import { AdvancedExercises } from "@/components/pages/AdvancedExercises";
 import { Achievements } from "@/components/pages/Achievements";
+import AdminDashboard from "@/components/pages/AdminDashboard";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export function Dashboard() {
@@ -37,6 +38,20 @@ export function Dashboard() {
         return <AdvancedExercises onNavigate={setCurrentPage} />;
       case "achievements":
         return <Achievements />;
+      case "admin":
+        return user.isAdmin ? (
+          <AdminDashboard />
+        ) : (
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center space-y-4">
+              <div className="text-6xl">🚫</div>
+              <h2 className="text-2xl font-bold">Access Denied</h2>
+              <p className="text-muted-foreground">
+                You don't have permission to access this page.
+              </p>
+            </div>
+          </div>
+        );
       default:
         return (
           <div className="flex items-center justify-center h-96">

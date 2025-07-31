@@ -48,3 +48,38 @@ export function withAuth<T>(
     return handler(request, params, userId)
   }
 }
+
+// Middleware helper for admin-only routes
+export function withAdminAuth<T>(
+  handler: (request: NextRequest, params: T, userId: string) => Promise<Response>
+) {
+  return async (request: NextRequest, params: T): Promise<Response> => {
+    const userId = getUserIdFromRequest(request)
+    
+    if (!userId) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    // Check if user is admin
+    const { PrismaClient } = await import('@prisma/client')
+    const prisma = new PrismaClient()
+    
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { isAdmin: true }
+      })
+      
+      if (!user?.isAdmin) {
+        return Response.json({ error: 'Admin access required' }, { status: 403 })
+      }
+      
+      return handler(request, params, userId)
+    } catch (error) {
+      console.error('Admin auth check error:', error)
+      return Response.json({ error: 'Authentication error' }, { status: 500 })
+    } finally {
+      await prisma.$disconnect()
+    }
+  }
+}

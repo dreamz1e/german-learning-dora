@@ -86,6 +86,17 @@ export function Navigation({
       icon: "🏆",
       description: "Your Badges & Rewards",
     },
+    ...(user.isAdmin
+      ? [
+          {
+            id: "admin",
+            label: "Admin",
+            icon: "⚡",
+            description: "Admin Dashboard",
+            badge: "Admin" as string,
+          },
+        ]
+      : []),
     {
       id: "profile",
       label: "Profile",
@@ -192,7 +203,12 @@ export function Navigation({
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{item.label}</span>
                         {item.badge && (
-                          <Badge variant="success" className="text-xs">
+                          <Badge
+                            variant={
+                              item.badge === "Admin" ? "destructive" : "success"
+                            }
+                            className="text-xs"
+                          >
                             {item.badge}
                           </Badge>
                         )}
