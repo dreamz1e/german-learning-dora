@@ -65,34 +65,89 @@ export function batchGrammarPrompt(
   const scenario = scenarios[seedNum % scenarios.length];
   const focus = focuses[(seedNum + 5) % focuses.length];
 
-  return `You are an expert German language curriculum creator AI, tasked with generating a batch of grammatically flawless grammar exercises. Your response MUST be a single, valid JSON object.
+  return `You are an expert German language curriculum creator AI. Follow the STRICT PROTOCOL below to generate a fail-proof batch of German grammar exercises.
 
-Generate exactly 5 diverse German grammar exercises for the ${difficulty} level, focusing on "${topic}".
+================ GENERATION PROTOCOL (read carefully, DO NOT output) ================
+1. INTERNAL_PLAN: Silently decide on 5 exercises, each with a unique aspect of the target grammar topic.
+2. SELF_CHECK: After drafting, verify that
+    • exactly 5 exercises exist.
+    • each "options" array has 4 UNIQUE strings.
+    • "correctAnswer" is included in "options".
+    • Let N = number of words in "correctAnswer" (split by spaces). There MUST be exactly N '__BLANK__' placeholders in "question".
+    • For EACH option, build a candidate sentence by replacing the blanks with that option (split into parts if multi-word). Count how many candidates are simultaneously
+      – fully grammatical,
+      – convey the intended meaning,
+      – and sound natural to a native speaker.
+      Exactly ONE option must satisfy all criteria; mark it as "correctAnswer".
+    • Reconstruct the sentence with the chosen "correctAnswer" and ensure:
+      – no '__BLANK__' tokens remain,
+      – no double spaces occur.
+    • JSON strictly conforms to the schema below (no missing/extra keys).
+    If ANY check fails, regenerate BEFORE responding.
+3. OUTPUT: Once all checks pass, emit ONLY the JSON object—no markdown, no comments.
+
+================ GOLD-STANDARD EXAMPLE (for internal reference, DO NOT output) ======
+{
+  "type": "grammar",
+  "difficulty": "B1",
+  "question": "Bevor das Meeting begann, __BLANK__ der Manager die Agenda __BLANK__.",
+  "options": ["stellte vor", "stellte zu", "legte aus", "setzte an"],
+  "correctAnswer": "stellte vor",
+  "explanation": "The separable verb 'vorstellen' splits into 'stellte ... vor' in the simple past.",
+  "topic": "Separable verbs in past tense",
+  "germanText": "Gestern stellte der Lehrer den neuen Plan vor.",
+  "englishText": "Yesterday the teacher presented the new plan."
+},
+{
+  "type": "grammar",
+  "difficulty": "B2",
+  "question": "Die Rechnung ist falsch, das __BLANK__ ein Irrtum __BLANK__!",
+  "options": ["muss sein", "darf sein", "sollte sein", "kann sein"],
+  "correctAnswer": "muss sein",
+  "explanation": "Fixed expression 'Das muss ein Irrtum sein' uses the modal verb 'muss' followed by 'sein'.",
+  "topic": "Modal verbs in set expressions",
+  "germanText": "Das muss ein Irrtum sein.",
+  "englishText": "That must be a mistake."
+},
+{
+  "type": "grammar",
+  "difficulty": "B2",
+  "question": "Wir __BLANK__ Ihnen dankbar, wenn Sie uns die Unterlagen bis Freitag zusenden könnten.",
+  "options": ["wären", "würden wir", "waren", "sollen wir"],
+  "correctAnswer": "wären",
+  "explanation": "In formal requests the Konjunktiv II of 'sein' (wären) expresses politeness: 'Wir wären Ihnen dankbar …'.",
+  "topic": "Konjunktiv II in polite requests",
+  "germanText": "Wir wären Ihnen sehr dankbar, wenn Sie uns informieren könnten.",
+  "englishText": "We would be very grateful if you could inform us."
+}
+
+================ TASK =================================================================
+
+Generate EXACTLY 5 diverse German grammar exercises for the ${difficulty} level, focusing on "${topic}".
 
 Variation Context:
 - Scenario: ${scenario}
 - Focus: ${focus}
 - Seed: ${variationSeed}
 
-Each of the 5 exercises MUST adhere to the following strict requirements:
-1.  **Unambiguous Correctness Rule**: There MUST be only one correct answer among the options. The correct answer must be unambiguously and contextually correct. The distractors must be plausible but definitively wrong.
-    - **Good Example**: "Wir müssen unbedingt __ über __ deinen Urlaub reden." (Correct: "über", Distractors: "mit", "von", "an") -> This is good because only "über" fits the context of discussing a topic.
-    - **Bad Example**: "Wir müssen unbedingt __ deinen Urlaub reden." (Correct: "mit", Distractors: "über", "von", "an") -> This is bad because the correct answer is grammatically wrong in the sentence, creating confusion.
+Each exercise MUST satisfy ALL of the following:
 
-2.  **Strict Placeholder and Deconstruction Rule**:
-    - If a verb phrase needs to be split, you MUST use multiple '__BLANK__' placeholders.
-    - The 'correctAnswer' MUST then contain the parts in order, separated by a space.
-    - **Correct Example**: question: "Vor dem Interview __BLANK__ sich der Moderator den Ablauf __BLANK__.", correctAnswer: "stellte vor"
-    - **Never provide a multi-word answer choice for a single blank.**
+1. **Unambiguous Correctness Rule** — only ONE correct answer among the four options.
+2. **Strict Placeholder and Deconstruction Rule**
+   • Use '__BLANK__' to mark every missing segment.
+   • The number of '__BLANK__' placeholders MUST equal the number of space-separated parts in "correctAnswer".
+   • Place each placeholder exactly where its corresponding part belongs in the final sentence (e.g. passive voice: "__BLANK__ der Nutzer … __BLANK__"  → "wird gefragt").
+   • If a multi-word answer is required, list the parts in order, separated by a single space, in "correctAnswer".
+3. **Grammatical Integrity** — with the correct answer filled in, the sentence is 100 % grammatical, logical and natural.
+4. **Coverage** — each exercise tests a DIFFERENT aspect of "${topic}".
+5. Provide **1 correct answer and 3 plausible distractors** targeting common errors.
+6. Include a **clear, educational explanation** in English (≤200 characters, no raw line breaks).
+7. **Integrate scenario ("${scenario}") and focus ("${focus}")** naturally into the context.
+8. **Serialization hygiene** — no field value may contain raw newline, carriage-return or tab characters. If absolutely needed, use \n escapes within the JSON string.
 
-3.  **Grammatical Integrity**: The final sentence, when blanks are filled with the correct answer, MUST be 100% grammatically correct, logical, and natural-sounding.
+================ OUTPUT FORMAT ======================================================
+Return ONE valid JSON object and NOTHING else.
 
-4.  **Test a different aspect** of the grammar topic "${topic}".
-5.  **Include one correct answer and three plausible distractors** that target common learner errors.
-6.  **Provide a detailed, educational explanation**.
-7.  **Incorporate the scenario ("${scenario}") and focus ("${focus}")** naturally into the exercises.
-
-The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
   "batchId": "auto-generated-uuid",
   "topic": "${topic}",
@@ -102,15 +157,14 @@ The output MUST be a single, valid JSON object with the following structure. Do 
       "type": "grammar",
       "difficulty": "${difficulty}",
       "question": "A grammatically correct sentence with one or more '__BLANK__' placeholders.",
-      "options": ["Correct Answer", "Plausible Distractor 1", "Plausible Distractor 2", "Plausible Distractor 3"],
+      "options": ["Correct Answer", "Distractor 1", "Distractor 2", "Distractor 3"],
       "correctAnswer": "Correct Answer",
-      "explanation": "A detailed explanation in English of the grammar rule and why the answer is correct.",
+      "explanation": "A detailed explanation in English of the grammar rule.",
       "topic": "${topic}",
-      "germanText": "A German sentence or short text providing context",
+      "germanText": "A German sentence or short text providing context.",
       "englishText": "The English translation of the German text."
     }
     // ... exactly 4 more exercise objects
   ]
-}
-`;
+}`;
 }

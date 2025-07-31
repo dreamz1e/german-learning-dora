@@ -44,7 +44,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const model = "google/gemini-2.5-flash";
+const model = "anthropic/claude-sonnet-4";
 const evaluationModel = "google/gemini-2.5-pro"; // Better for structured output
 
 // In-memory exercise cycle managers (in production, this would be stored in database)
@@ -559,7 +559,7 @@ export async function generateReadingExercise(
           },
         ],
         temperature: Math.min(temperature, 1.0),
-        max_tokens: 1000,
+        max_tokens: 4000,
         response_format: {
           type: "json_schema",
           json_schema: {

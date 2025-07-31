@@ -78,12 +78,10 @@ function cleanJsonResponse(content: string): string {
   // Remove any leading/trailing whitespace
   cleaned = cleaned.trim();
 
-  // Fix common JSON string issues by removing problematic characters
-  // Remove unescaped newlines, tabs, and carriage returns from string values
-  cleaned = cleaned
-    .replace(/([^\\])\n/g, "$1\\n")
-    .replace(/([^\\])\r/g, "$1\\r")
-    .replace(/([^\\])\t/g, "$1\\t");
+  // Preserve original newlines. We'll rely on the more intelligent
+  // repairIncompleteJson() routine below to deal with illegal newlines that
+  // appear INSIDE string literals. Removing / escaping them globally caused
+  // stray backslashes outside strings and broke parsing.
 
   // Find JSON start
   const jsonStart = Math.max(cleaned.indexOf("{"), cleaned.indexOf("["));
@@ -222,7 +220,7 @@ function validateRequiredFields(
   const missingFields = requiredFields.filter((field) => {
     const value = obj[field];
 
-    // Check for undefined, null, or empty string
+    // Check for undefined, null
     if (value === undefined || value === null) {
       return true;
     }
@@ -232,10 +230,8 @@ function validateRequiredFields(
       return true;
     }
 
-    // For arrays, check if empty
-    if (Array.isArray(value) && value.length === 0) {
-      return true;
-    }
+    // Arrays are valid even if empty (e.g., no errors found)
+    // Objects and other types are valid if they exist
 
     return false;
   });
