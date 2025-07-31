@@ -11,9 +11,28 @@ export function processAIResponse<T>(
     try {
       parsed = JSON.parse(content) as T;
     } catch (directParseError) {
+      console.log(
+        "Direct JSON parsing failed, attempting to clean and repair..."
+      );
+
       // If direct parsing fails, try cleaning the content
       const cleanedContent = cleanJsonResponse(content);
-      parsed = JSON.parse(cleanedContent) as T;
+      console.log(
+        "Cleaned content:",
+        cleanedContent.substring(0, 500) +
+          (cleanedContent.length > 500 ? "..." : "")
+      );
+
+      try {
+        parsed = JSON.parse(cleanedContent) as T;
+        console.log("Successfully parsed cleaned JSON");
+      } catch (cleanedParseError) {
+        console.error(
+          "Failed to parse even after cleaning:",
+          cleanedParseError
+        );
+        throw cleanedParseError;
+      }
     }
 
     // Validate required fields if provided
@@ -25,7 +44,30 @@ export function processAIResponse<T>(
   } catch (error) {
     console.error("Error processing AI response:", error);
     console.error("Raw content:", content);
-    throw new Error("Failed to process AI response: Invalid JSON format");
+    console.error("Content length:", content.length);
+    console.error(
+      "Content preview:",
+      content.substring(0, 200) + (content.length > 200 ? "..." : "")
+    );
+
+    // Try to provide more specific error information
+    if (error instanceof SyntaxError) {
+      const match = error.message.match(/position (\d+)/);
+      if (match) {
+        const position = parseInt(match[1]);
+        const context = content.substring(
+          Math.max(0, position - 50),
+          position + 50
+        );
+        console.error(`Syntax error near position ${position}: "${context}"`);
+      }
+    }
+
+    throw new Error(
+      `Failed to process AI response: ${
+        error instanceof Error ? error.message : "Invalid JSON format"
+      }`
+    );
   }
 }
 
@@ -38,9 +80,10 @@ function cleanJsonResponse(content: string): string {
 
   // Fix common JSON string issues by removing problematic characters
   // Remove unescaped newlines, tabs, and carriage returns from string values
-  cleaned = cleaned.replace(/([^\\])\n/g, '$1\\n')
-                   .replace(/([^\\])\r/g, '$1\\r')
-                   .replace(/([^\\])\t/g, '$1\\t');
+  cleaned = cleaned
+    .replace(/([^\\])\n/g, "$1\\n")
+    .replace(/([^\\])\r/g, "$1\\r")
+    .replace(/([^\\])\t/g, "$1\\t");
 
   // Find JSON start
   const jsonStart = Math.max(cleaned.indexOf("{"), cleaned.indexOf("["));
@@ -48,71 +91,128 @@ function cleanJsonResponse(content: string): string {
     cleaned = cleaned.substring(jsonStart);
   }
 
-  // Try to fix incomplete JSON by adding missing closing braces/brackets
+  // Advanced JSON repair: handle unterminated strings and incomplete structures
+  cleaned = repairIncompleteJson(cleaned);
+
+  return cleaned;
+}
+
+function repairIncompleteJson(json: string): string {
+  let result = "";
   let braceCount = 0;
   let bracketCount = 0;
   let inString = false;
   let escapeNext = false;
   let lastValidIndex = -1;
+  let stringStartIndex = -1;
 
-  for (let i = 0; i < cleaned.length; i++) {
-    const char = cleaned[i];
+  for (let i = 0; i < json.length; i++) {
+    const char = json[i];
 
     if (escapeNext) {
       escapeNext = false;
+      result += char;
       continue;
     }
 
     if (char === "\\") {
       escapeNext = true;
+      result += char;
       continue;
     }
 
     if (char === '"' && !escapeNext) {
-      inString = !inString;
+      if (!inString) {
+        stringStartIndex = i;
+        inString = true;
+      } else {
+        inString = false;
+        stringStartIndex = -1;
+      }
+      result += char;
       continue;
     }
 
     if (!inString) {
       if (char === "{") {
         braceCount++;
+        result += char;
       } else if (char === "}") {
         braceCount--;
+        result += char;
         if (braceCount === 0 && bracketCount === 0) {
-          lastValidIndex = i;
+          lastValidIndex = result.length - 1;
         }
       } else if (char === "[") {
         bracketCount++;
+        result += char;
       } else if (char === "]") {
         bracketCount--;
+        result += char;
         if (braceCount === 0 && bracketCount === 0) {
-          lastValidIndex = i;
+          lastValidIndex = result.length - 1;
         }
+      } else {
+        result += char;
+      }
+    } else {
+      // We're inside a string
+      if (char === "\n" || char === "\r") {
+        // Unescaped newline/carriage return in string - this is likely where truncation occurred
+        // Close the string and try to continue parsing
+        result += '"';
+        inString = false;
+        stringStartIndex = -1;
+
+        // Skip this character and any following whitespace
+        while (i + 1 < json.length && /\s/.test(json[i + 1])) {
+          i++;
+        }
+
+        // Check if we need to add a comma and continue with the next property
+        if (
+          i + 1 < json.length &&
+          json[i + 1] !== "," &&
+          json[i + 1] !== "}" &&
+          json[i + 1] !== "]"
+        ) {
+          // Look ahead to see if there's a property name or closing brace coming
+          let nextNonSpace = i + 1;
+          while (nextNonSpace < json.length && /\s/.test(json[nextNonSpace])) {
+            nextNonSpace++;
+          }
+
+          if (nextNonSpace < json.length && json[nextNonSpace] === '"') {
+            result += ",";
+          }
+        }
+      } else {
+        result += char;
       }
     }
   }
 
-  // If we found a complete JSON object, use it
+  // If we ended while still in a string, close it
+  if (inString) {
+    result += '"';
+  }
+
+  // If we have a complete JSON object/array, use just that part
   if (lastValidIndex > 0) {
-    cleaned = cleaned.substring(0, lastValidIndex + 1);
-  } else if (braceCount > 0 || bracketCount > 0) {
-    // Try to close incomplete JSON
+    result = result.substring(0, lastValidIndex + 1);
+  } else {
+    // Add missing closing braces/brackets
     while (braceCount > 0) {
-      cleaned += "}";
+      result += "}";
       braceCount--;
     }
     while (bracketCount > 0) {
-      cleaned += "]";
+      result += "]";
       bracketCount--;
     }
   }
 
-  // Fix unterminated strings at the end
-  if (inString) {
-    cleaned += '"';
-  }
-
-  return cleaned;
+  return result;
 }
 
 function validateRequiredFields(
@@ -193,4 +293,3 @@ export function sanitizeString(str: string, maxLength: number = 1000): string {
 
   return sanitized;
 }
-

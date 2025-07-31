@@ -27,7 +27,7 @@ const openai = new OpenAI({
 });
 
 const model = "google/gemini-2.5-flash";
-const evaluationModel = "openai/gpt-4.1"; // Better for structured output
+const evaluationModel = "google/gemini-2.5-pro"; // Better for structured output
 
 export interface GermanExercise {
   type:
@@ -799,7 +799,7 @@ export async function evaluateWriting(
           },
         ],
         temperature: 0.3,
-        max_tokens: 2000, // Increased to avoid truncation
+        max_tokens: 5000, // Increased to avoid truncation
         response_format:
           attempt === 0
             ? {
