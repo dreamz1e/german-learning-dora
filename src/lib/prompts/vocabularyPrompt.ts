@@ -90,10 +90,11 @@ IMPORTANT: Use the above context elements to create a UNIQUE vocabulary exercise
 
 Requirements:
 - Present a German word with multiple choice English translations
-- Include 1 correct answer and 3 plausible but incorrect options
+- Include 1 correct ENGLISH TRANSLATION and 3 plausible but incorrect ENGLISH OPTIONS
 - Provide a clear, educational explanation with example usage
 - Include a German example sentence and its English translation
 - Make distractors believable but clearly wrong to knowledgeable speakers
+- The correctAnswer field MUST be the English translation of the German word, NOT the German word itself
 
 Guidelines for difficulty:
 - A2_BASIC: Common nouns, basic verbs, everyday concepts
@@ -114,13 +115,15 @@ Return ONLY a valid JSON object with this exact structure:
   "type": "vocabulary",
   "difficulty": "${difficulty}",
   "question": "What does '[German word]' mean in English?",
-  "options": ["correct answer", "plausible distractor 1", "plausible distractor 2", "plausible distractor 3"],
-  "correctAnswer": "correct answer",
+  "options": ["correct English translation", "incorrect English option 1", "incorrect English option 2", "incorrect English option 3"],
+  "correctAnswer": "correct English translation",
   "explanation": "Brief explanation of the word's meaning and usage context, incorporating scenario: ${selectedScenario}",
   "topic": "word category relevant to the context",
   "germanText": "Natural German sentence using the word in the context of ${selectedSetting} with ${selectedCharacters}",
   "englishText": "English translation of the German sentence"
 }
+
+CRITICAL: The correctAnswer MUST be an English translation of the German word, never the German word itself!
 
 Make it educational, practical, and culturally relevant to German-speaking countries. Ensure ORIGINALITY by incorporating the variation context naturally.`;
 }

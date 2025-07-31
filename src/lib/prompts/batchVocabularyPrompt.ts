@@ -43,9 +43,10 @@ Seed: ${variationSeed}
 
 Each exercise must:
 - Test different German words within the topic
-- Include 4 options (1 correct, 3 distractors)
+- Include 4 options (1 correct ENGLISH TRANSLATION, 3 incorrect ENGLISH distractors)
 - Have clear explanations
 - Include German + English example sentences
+- The correctAnswer field MUST be the English translation of the German word, NOT the German word itself
 
 Return JSON:
 {
@@ -56,9 +57,9 @@ Return JSON:
     {
       "type": "vocabulary",
       "difficulty": "${difficulty}",
-      "question": "What does '[German word]' mean?",
-      "options": ["correct", "wrong1", "wrong2", "wrong3"],
-      "correctAnswer": "correct",
+      "question": "What does '[German word]' mean in English?",
+      "options": ["correct English translation", "incorrect English option 1", "incorrect English option 2", "incorrect English option 3"],
+      "correctAnswer": "correct English translation",
       "explanation": "Brief explanation with context",
       "topic": "${topic}",
       "germanText": "German example sentence",
@@ -68,5 +69,7 @@ Return JSON:
   ]
 }
 
-Focus on practical, high-frequency vocabulary. Ensure variety and avoid repetition.`;
+Focus on practical, high-frequency vocabulary. Ensure variety and avoid repetition.
+
+CRITICAL: The correctAnswer MUST always be an English translation of the German word being tested, never the German word itself!`;
 }

@@ -133,15 +133,16 @@ export function ExerciseContainer({
                 {question}
               </h2>
 
-              {/* German Text Context (if provided) */}
+              {/* Context Sentence (if provided) */}
               {germanText && (
                 <div className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded-r-lg">
                   <p className="text-pink-900 font-medium italic">
                     "{germanText}"
                   </p>
-                  {englishText && (
+                  {/* Show English translation only after answer is submitted */}
+                  {isAnswered && englishText && (
                     <p className="text-pink-700 text-sm mt-2">
-                      "{englishText}"
+                      Translation: "{englishText}"
                     </p>
                   )}
                 </div>
