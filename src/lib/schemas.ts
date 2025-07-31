@@ -507,8 +507,8 @@ export const BatchGrammarExercisesSchema = {
     exercises: {
       type: "array",
       items: GermanExerciseSchema,
-      minItems: 5,
-      maxItems: 5,
+      minItems: 10,
+      maxItems: 10,
     },
   },
   required: ["batchId", "topic", "difficulty", "exercises"],
@@ -541,8 +541,8 @@ export const BatchVocabularyExercisesSchema = {
     exercises: {
       type: "array",
       items: GermanExerciseSchema,
-      minItems: 5,
-      maxItems: 5,
+      minItems: 10,
+      maxItems: 10,
     },
   },
   required: ["batchId", "topic", "difficulty", "exercises"],
