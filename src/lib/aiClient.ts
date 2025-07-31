@@ -559,7 +559,7 @@ export async function generateReadingExercise(
           },
         ],
         temperature: Math.min(temperature, 1.0),
-        max_tokens: 1000,
+        max_tokens: 4000,
         response_format: {
           type: "json_schema",
           json_schema: {
