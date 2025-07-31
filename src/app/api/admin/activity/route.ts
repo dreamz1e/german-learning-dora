@@ -4,10 +4,13 @@ import prisma from "@/lib/db";
 
 async function getActivityHandler(
   request: NextRequest,
-  params: {},
+  { params }: { params: Promise<{}> },
   userId: string
 ) {
   try {
+    // Await params for Next.js 15 compatibility (even though we don't use them here)
+    await params;
+
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");

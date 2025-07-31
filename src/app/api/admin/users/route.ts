@@ -1,11 +1,18 @@
-import { NextRequest } from 'next/server'
-import { withAdminAuth } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
+import { NextRequest } from "next/server";
+import { withAdminAuth } from "@/lib/auth";
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
-async function getUsersHandler(request: NextRequest, params: {}, userId: string) {
+async function getUsersHandler(
+  request: NextRequest,
+  { params }: { params: Promise<{}> },
+  userId: string
+) {
   try {
+    // Await params for Next.js 15 compatibility (even though we don't use them here)
+    await params;
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -20,23 +27,23 @@ async function getUsersHandler(request: NextRequest, params: {}, userId: string)
             avatar: true,
             nativeLanguage: true,
             targetLanguage: true,
-            timezone: true
-          }
+            timezone: true,
+          },
         },
         progress: {
           select: {
             currentLevel: true,
             totalXP: true,
             weeklyXP: true,
-            lastActive: true
-          }
+            lastActive: true,
+          },
         },
         dailyStreak: {
           select: {
             currentStreak: true,
             longestStreak: true,
-            lastActiveDate: true
-          }
+            lastActiveDate: true,
+          },
         },
         achievements: {
           select: {
@@ -45,25 +52,25 @@ async function getUsersHandler(request: NextRequest, params: {}, userId: string)
               select: {
                 name: true,
                 category: true,
-                xpReward: true
-              }
-            }
+                xpReward: true,
+              },
+            },
           },
           orderBy: {
-            unlockedAt: 'desc'
+            unlockedAt: "desc",
           },
-          take: 5 // Latest 5 achievements per user
+          take: 5, // Latest 5 achievements per user
         },
         exerciseResults: {
           select: {
             isCorrect: true,
             completedAt: true,
-            timeSpent: true
+            timeSpent: true,
           },
           orderBy: {
-            completedAt: 'desc'
+            completedAt: "desc",
           },
-          take: 10 // Latest 10 exercise results
+          take: 10, // Latest 10 exercise results
         },
         dailyChallengeCompletions: {
           select: {
@@ -71,38 +78,50 @@ async function getUsersHandler(request: NextRequest, params: {}, userId: string)
             taskType: true,
             isCorrect: true,
             xpEarned: true,
-            completedAt: true
+            completedAt: true,
           },
           orderBy: {
-            completedAt: 'desc'
+            completedAt: "desc",
           },
-          take: 5 // Latest 5 daily challenge completions
+          take: 5, // Latest 5 daily challenge completions
         },
         _count: {
           select: {
             exerciseResults: true,
             achievements: true,
-            dailyChallengeCompletions: true
-          }
-        }
+            dailyChallengeCompletions: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
-    })
+        createdAt: "desc",
+      },
+    });
 
     // Add calculated metrics for each user
-    const usersWithMetrics = users.map(user => {
-      const correctExercises = user.exerciseResults.filter(r => r.isCorrect).length
-      const totalExercises = user.exerciseResults.length
-      const successRate = totalExercises > 0 ? (correctExercises / totalExercises * 100).toFixed(1) : '0'
-      
-      const averageTimeSpent = totalExercises > 0 
-        ? Math.round(user.exerciseResults.reduce((sum, r) => sum + r.timeSpent, 0) / totalExercises)
-        : 0
+    const usersWithMetrics = users.map((user) => {
+      const correctExercises = user.exerciseResults.filter(
+        (r) => r.isCorrect
+      ).length;
+      const totalExercises = user.exerciseResults.length;
+      const successRate =
+        totalExercises > 0
+          ? ((correctExercises / totalExercises) * 100).toFixed(1)
+          : "0";
 
-      const lastActivity = user.progress?.lastActive || user.createdAt
-      const daysSinceActive = Math.floor((new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24))
+      const averageTimeSpent =
+        totalExercises > 0
+          ? Math.round(
+              user.exerciseResults.reduce((sum, r) => sum + r.timeSpent, 0) /
+                totalExercises
+            )
+          : 0;
+
+      const lastActivity = user.progress?.lastActive || user.createdAt;
+      const daysSinceActive = Math.floor(
+        (new Date().getTime() - new Date(lastActivity).getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
 
       return {
         ...user,
@@ -112,23 +131,22 @@ async function getUsersHandler(request: NextRequest, params: {}, userId: string)
           daysSinceActive,
           totalExercises: user._count.exerciseResults,
           totalAchievements: user._count.achievements,
-          totalDailyChallenges: user._count.dailyChallengeCompletions
-        }
-      }
-    })
+          totalDailyChallenges: user._count.dailyChallengeCompletions,
+        },
+      };
+    });
 
-    return Response.json({ 
+    return Response.json({
       users: usersWithMetrics,
       totalUsers: users.length,
-      timestamp: new Date().toISOString()
-    })
-
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
-    console.error('Error fetching users:', error)
-    return Response.json({ error: 'Failed to fetch users' }, { status: 500 })
+    console.error("Error fetching users:", error);
+    return Response.json({ error: "Failed to fetch users" }, { status: 500 });
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
-export const GET = withAdminAuth(getUsersHandler)
+export const GET = withAdminAuth(getUsersHandler);
