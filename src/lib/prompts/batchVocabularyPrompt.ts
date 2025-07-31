@@ -43,9 +43,9 @@ export function batchVocabularyPrompt(
   return `You are an expert German language curriculum creator AI. Follow the STRICT PROTOCOL below to generate a fail-proof batch of vocabulary exercises.
 
 ================ GENERATION PROTOCOL (read carefully, DO NOT output) ================
-1. INTERNAL_PLAN: Silently think through 5 distinct words related to "${topic}" appropriate for the ${difficulty} level and the "${direction}" translation direction.
+1. INTERNAL_PLAN: Silently think through 10 distinct words related to "${topic}" appropriate for the ${difficulty} level and the "${direction}" translation direction.
 2. SELF_CHECK: Ensure that
-   • exactly 5 exercises are present.
+   • exactly 10 exercises are present.
    • no repeated words across exercises.
    • every "options" array has 4 UNIQUE strings.
    • "correctAnswer" is in the options and is NOT a direct cognate.
@@ -68,7 +68,7 @@ export function batchVocabularyPrompt(
 
 ================ TASK =================================================================
 
-Generate EXACTLY 5 diverse German vocabulary exercises for the ${difficulty} level, focusing on "${topic}".
+Generate EXACTLY 10 diverse German vocabulary exercises for the ${difficulty} level, focusing on "${topic}".
 
 Variation Context:
 - Style: ${style}
@@ -106,7 +106,7 @@ Return ONE valid JSON object and NOTHING else.
       "germanText": "A German example sentence.",
       "englishText": "The corresponding English translation."
     }
-    // ... exactly 4 more exercise objects
+    // ... exactly 9 more exercise objects
   ]
 }`;
 }

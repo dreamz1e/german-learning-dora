@@ -68,9 +68,9 @@ export function batchGrammarPrompt(
   return `You are an expert German language curriculum creator AI. Follow the STRICT PROTOCOL below to generate a fail-proof batch of German grammar exercises.
 
 ================ GENERATION PROTOCOL (read carefully, DO NOT output) ================
-1. INTERNAL_PLAN: Silently decide on 5 exercises, each with a unique aspect of the target grammar topic.
+1. INTERNAL_PLAN: Silently decide on 10 exercises, each with a unique aspect of the target grammar topic.
 2. SELF_CHECK: After drafting, verify that
-    • exactly 5 exercises exist.
+    • exactly 10 exercises exist.
     • each "options" array has 4 UNIQUE strings.
     • "correctAnswer" is included in "options".
     • Let N = number of words in "correctAnswer" (split by spaces). There MUST be exactly N '__BLANK__' placeholders in "question".
@@ -123,7 +123,7 @@ export function batchGrammarPrompt(
 
 ================ TASK =================================================================
 
-Generate EXACTLY 5 diverse German grammar exercises for the ${difficulty} level, focusing on "${topic}".
+Generate EXACTLY 10 diverse German grammar exercises for the ${difficulty} level, focusing on "${topic}".
 
 Variation Context:
 - Scenario: ${scenario}
