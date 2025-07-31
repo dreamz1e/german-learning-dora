@@ -109,7 +109,7 @@ export function Navigation({
     <>
       {/* Mobile Menu Button */}
       <button
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-lg shadow-lg border touch-manipulation"
+        className="lg:hidden fixed top-2 right-30 z-50 p-3 bg-white rounded-lg shadow-lg border touch-manipulation"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
       >
