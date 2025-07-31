@@ -1,24 +1,21 @@
 import { NextRequest } from "next/server";
 import { withAdminAuth } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/db";
 
 async function getUsersHandler(
   request: NextRequest,
-  { params }: { params: Promise<{}> },
+  params: { params: Promise<{}> },
   userId: string
 ) {
   try {
     // Await params for Next.js 15 compatibility (even though we don't use them here)
-    await params;
+    await params.params;
 
     const users = await prisma.user.findMany({
       select: {
         id: true,
         username: true,
         email: true,
-        isAdmin: true,
         createdAt: true,
         updatedAt: true,
         profile: {
@@ -72,24 +69,11 @@ async function getUsersHandler(
           },
           take: 10, // Latest 10 exercise results
         },
-        dailyChallengeCompletions: {
-          select: {
-            date: true,
-            taskType: true,
-            isCorrect: true,
-            xpEarned: true,
-            completedAt: true,
-          },
-          orderBy: {
-            completedAt: "desc",
-          },
-          take: 5, // Latest 5 daily challenge completions
-        },
+
         _count: {
           select: {
             exerciseResults: true,
             achievements: true,
-            dailyChallengeCompletions: true,
           },
         },
       },
@@ -99,9 +83,9 @@ async function getUsersHandler(
     });
 
     // Add calculated metrics for each user
-    const usersWithMetrics = users.map((user) => {
+    const usersWithMetrics = users.map((user: any) => {
       const correctExercises = user.exerciseResults.filter(
-        (r) => r.isCorrect
+        (r: any) => r.isCorrect
       ).length;
       const totalExercises = user.exerciseResults.length;
       const successRate =
@@ -112,8 +96,10 @@ async function getUsersHandler(
       const averageTimeSpent =
         totalExercises > 0
           ? Math.round(
-              user.exerciseResults.reduce((sum, r) => sum + r.timeSpent, 0) /
-                totalExercises
+              user.exerciseResults.reduce(
+                (sum: any, r: any) => sum + r.timeSpent,
+                0
+              ) / totalExercises
             )
           : 0;
 
@@ -131,7 +117,7 @@ async function getUsersHandler(
           daysSinceActive,
           totalExercises: user._count.exerciseResults,
           totalAchievements: user._count.achievements,
-          totalDailyChallenges: user._count.dailyChallengeCompletions,
+          totalDailyChallenges: 0, // TODO: Fix dailyChallengeCompletions query
         },
       };
     });
@@ -144,8 +130,6 @@ async function getUsersHandler(
   } catch (error) {
     console.error("Error fetching users:", error);
     return Response.json({ error: "Failed to fetch users" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
