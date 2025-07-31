@@ -17,7 +17,11 @@ interface WritingPrompt {
   maxWords: number;
 }
 
-export function WritingPractice() {
+interface WritingPracticeProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [currentPrompt, setCurrentPrompt] = useState<WritingPrompt | null>(

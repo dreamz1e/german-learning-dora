@@ -24,17 +24,17 @@ export function Dashboard() {
       case "dashboard":
         return <DashboardOverview onNavigate={setCurrentPage} />;
       case "daily-challenge":
-        return <DailyChallenge />;
+        return <DailyChallenge onNavigate={setCurrentPage} />;
       case "grammar":
-        return <GrammarPractice />;
+        return <GrammarPractice onNavigate={setCurrentPage} />;
       case "vocabulary":
-        return <VocabularyBuilder />;
+        return <VocabularyBuilder onNavigate={setCurrentPage} />;
       case "reading":
-        return <ReadingComprehension />;
+        return <ReadingComprehension onNavigate={setCurrentPage} />;
       case "writing":
-        return <WritingPractice />;
+        return <WritingPractice onNavigate={setCurrentPage} />;
       case "advanced":
-        return <AdvancedExercises />;
+        return <AdvancedExercises onNavigate={setCurrentPage} />;
       case "achievements":
         return <Achievements />;
       default:

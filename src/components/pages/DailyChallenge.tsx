@@ -19,16 +19,23 @@ interface DailyTask {
   type: string;
   aiGenerated?: boolean;
   content?: any;
+  completed?: boolean;
+  redirectTo?: string;
 }
 
-export function DailyChallenge() {
+interface DailyChallengeProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
+  console.log("DailyChallenge component - onNavigate received:", !!onNavigate);
   const { user } = useAuth();
   const { addToast } = useToast();
   const [challengeProgress, setChallengeProgress] = useState(0);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTask, setActiveTask] = useState<DailyTask | null>(null);
+  const [completionsLoading, setCompletionsLoading] = useState(true);
 
   if (!user) return null;
 
@@ -86,18 +93,31 @@ export function DailyChallenge() {
       .sort(() => Math.random() - 0.5)
       .slice(0, taskCount);
 
-    const tasks: DailyTask[] = selectedTypes.map((taskType, index) => ({
-      id: `daily-${taskType.type}-${Date.now()}-${index}`,
-      title: taskType.title,
-      description: `AI-generated ${taskType.type} exercise tailored to your level`,
-      icon: taskType.icon,
-      xp: taskType.baseXP + userLevel * 2, // Scale XP with level
-      difficulty: taskType.difficulty,
-      estimatedTime: getEstimatedTime(taskType.type, taskType.difficulty),
-      type: taskType.type,
-      aiGenerated: true,
-    }));
+    const tasks: DailyTask[] = selectedTypes.map((taskType, index) => {
+      const redirectTo = getRedirectPage(taskType.type);
+      console.log(
+        `Generating task ${taskType.type} -> redirectTo: ${redirectTo}`
+      );
 
+      return {
+        id: `daily-${taskType.type}-${Date.now()}-${index}`,
+        title: taskType.title,
+        description: `AI-generated ${taskType.type} exercise tailored to your level`,
+        icon: taskType.icon,
+        xp: taskType.baseXP + userLevel * 2, // Scale XP with level
+        difficulty: taskType.difficulty,
+        estimatedTime: getEstimatedTime(taskType.type, taskType.difficulty),
+        type: taskType.type,
+        aiGenerated: true,
+        completed: false,
+        redirectTo: redirectTo,
+      };
+    });
+
+    console.log(
+      "Generated tasks:",
+      tasks.map((t) => ({ type: t.type, redirectTo: t.redirectTo }))
+    );
     return tasks;
   };
 
@@ -121,33 +141,109 @@ export function DailyChallenge() {
     return `${Math.round(baseMinutes * difficultyMultiplier)} min`;
   };
 
+  const getRedirectPage = (type: string): string => {
+    const pageMapping: Record<string, string> = {
+      vocabulary: "vocabulary",
+      grammar: "grammar",
+      reading: "reading",
+      writing: "writing",
+      sentence_construction: "advanced", // Sentence construction is in advanced exercises
+    };
+    return pageMapping[type] || "dashboard";
+  };
+
+  // Fetch user's daily challenge completions for today
+  const fetchCompletions = async () => {
+    try {
+      setCompletionsLoading(true);
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+      const response = await fetch(
+        `/api/daily-challenges/completions?date=${today}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const completedTaskIds = data.completions.map((c: any) => c.taskId);
+        setCompletedTasks(completedTaskIds);
+
+        // Update progress
+        const totalTasks = dailyTasks.length || 4; // fallback to 4 if tasks not loaded yet
+        setChallengeProgress((completedTaskIds.length / totalTasks) * 100);
+      }
+    } catch (error) {
+      console.error("Error fetching completions:", error);
+    } finally {
+      setCompletionsLoading(false);
+    }
+  };
+
+  // Save completion to database
+  const saveCompletion = async (
+    taskId: string,
+    taskType: string,
+    isCorrect: boolean,
+    timeSpent: number,
+    xpEarned: number
+  ) => {
+    try {
+      const response = await fetch("/api/daily-challenges/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskId,
+          taskType,
+          isCorrect,
+          timeSpent,
+          xpEarned,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save completion");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error saving completion:", error);
+      throw error;
+    }
+  };
+
   // Load daily tasks on component mount
   useEffect(() => {
     const loadDailyTasks = async () => {
       setIsLoading(true);
       try {
-        // Check if we have today's tasks cached
+        // Check if we have today's tasks cached (still cache tasks, but not completions)
         const today = new Date().toDateString();
         const cachedTasks = localStorage.getItem(`dailyTasks-${today}`);
 
         if (cachedTasks) {
-          setDailyTasks(JSON.parse(cachedTasks));
+          const parsedTasks = JSON.parse(cachedTasks);
+          // Check if cached tasks have the redirectTo property (for backward compatibility)
+          if (
+            parsedTasks.length > 0 &&
+            parsedTasks[0].redirectTo !== undefined
+          ) {
+            console.log("Using cached tasks with redirectTo property");
+            setDailyTasks(parsedTasks);
+          } else {
+            console.log(
+              "Cached tasks missing redirectTo property, regenerating..."
+            );
+            const newTasks = await generateDailyTasks();
+            setDailyTasks(newTasks);
+            localStorage.setItem(
+              `dailyTasks-${today}`,
+              JSON.stringify(newTasks)
+            );
+          }
         } else {
+          console.log("No cached tasks found, generating new tasks...");
           const newTasks = await generateDailyTasks();
           setDailyTasks(newTasks);
           localStorage.setItem(`dailyTasks-${today}`, JSON.stringify(newTasks));
-        }
-
-        // Load completed tasks for today
-        const completedToday = localStorage.getItem(`completedTasks-${today}`);
-        if (completedToday) {
-          const completed = JSON.parse(completedToday);
-          setCompletedTasks(completed);
-          setChallengeProgress(
-            (completed.length /
-              (cachedTasks ? JSON.parse(cachedTasks).length : 4)) *
-              100
-          );
         }
       } catch (error) {
         console.error("Error loading daily tasks:", error);
@@ -165,6 +261,70 @@ export function DailyChallenge() {
     loadDailyTasks();
   }, [addToast, userLevel]);
 
+  // Load user's completions separately
+  useEffect(() => {
+    if (user) {
+      fetchCompletions();
+    }
+  }, [user]);
+
+  // Update progress when tasks or completions change
+  useEffect(() => {
+    if (dailyTasks.length > 0) {
+      setChallengeProgress((completedTasks.length / dailyTasks.length) * 100);
+    }
+  }, [dailyTasks, completedTasks]);
+
+  // Check for completed daily challenge when coming back from exercises
+  useEffect(() => {
+    const checkCompletedChallenge = async () => {
+      const completedDailyChallenge = localStorage.getItem(
+        "completedDailyChallenge"
+      );
+
+      if (completedDailyChallenge) {
+        const completed = JSON.parse(completedDailyChallenge);
+
+        // Save completion to database if it's not already completed
+        if (!completedTasks.includes(completed.taskId)) {
+          try {
+            await saveCompletion(
+              completed.taskId,
+              completed.taskType || "unknown",
+              completed.isCorrect || false,
+              completed.timeSpent || 0,
+              completed.xpEarned || 0
+            );
+
+            // Refresh completions from database
+            await fetchCompletions();
+
+            addToast({
+              type: "success",
+              title: "Daily Challenge Complete! 🎉",
+              message: `Task completed successfully!`,
+              duration: 4000,
+            });
+          } catch (error) {
+            console.error("Error saving completion:", error);
+            addToast({
+              type: "error",
+              title: "Error",
+              message: "Failed to save task completion. Please try again.",
+              duration: 3000,
+            });
+          }
+        }
+
+        // Clean up the local storage
+        localStorage.removeItem("completedDailyChallenge");
+        localStorage.removeItem("activeDailyChallenge");
+      }
+    };
+
+    checkCompletedChallenge();
+  }, []);
+
   const handleStartTask = async (task: DailyTask) => {
     if (completedTasks.includes(task.id)) {
       addToast({
@@ -176,151 +336,188 @@ export function DailyChallenge() {
       return;
     }
 
-    setActiveTask(task);
+    // Store the current daily challenge task in localStorage
+    localStorage.setItem(
+      "activeDailyChallenge",
+      JSON.stringify({
+        taskId: task.id,
+        taskType: task.type,
+        taskTitle: task.title,
+        xp: task.xp,
+        difficulty: task.difficulty,
+        startTime: Date.now(),
+      })
+    );
 
-    // For now, simulate task completion since we have the exercise components
-    // In a full implementation, this would navigate to the actual exercise
     addToast({
       type: "info",
-      title: "Starting Task",
-      message: `Starting "${task.title}"...`,
+      title: "Redirecting to Exercise",
+      message: `Opening ${task.title}...`,
       duration: 2000,
     });
 
-    // Simulate task completion after a short delay (for demo purposes)
-    setTimeout(() => {
-      handleCompleteTask(task.id);
-      setActiveTask(null);
-    }, 2000);
-  };
+    // Navigate to the appropriate exercise page
+    console.log(
+      "Debug - onNavigate:",
+      !!onNavigate,
+      "task.redirectTo:",
+      task.redirectTo,
+      "task.type:",
+      task.type
+    );
 
-  const handleCompleteTask = async (taskId: string) => {
-    if (!completedTasks.includes(taskId)) {
-      const task = dailyTasks.find((t) => t.id === taskId);
-
-      try {
-        // Award XP for the task
-        const xpResponse = await fetch("/api/gamification/award-xp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: task?.xp || 0,
-            reason: `Completed daily task: ${task?.title}`,
-            category: "DAILY_CHALLENGE",
-          }),
-        });
-
-        if (xpResponse.ok) {
-          const xpData = await xpResponse.json();
-
-          const newCompleted = [...completedTasks, taskId];
-          setCompletedTasks(newCompleted);
-          setChallengeProgress((newCompleted.length / dailyTasks.length) * 100);
-
-          // Save to localStorage
-          const today = new Date().toDateString();
-          localStorage.setItem(
-            `completedTasks-${today}`,
-            JSON.stringify(newCompleted)
-          );
-
-          addToast({
-            type: "success",
-            title: "Task Completed! 🎉",
-            message: `You earned ${task?.xp} XP for "${task?.title}"`,
-            duration: 4000,
-          });
-
-          // Show level up notification if applicable
-          if (xpData.leveledUp) {
-            addToast({
-              type: "success",
-              title: `🎉 Level Up! You're now Level ${xpData.newLevel}!`,
-              message: `Congratulations on reaching Level ${xpData.newLevel}!`,
-              duration: 5000,
-            });
-          }
-
-          // Check if all tasks completed
-          if (newCompleted.length === dailyTasks.length) {
-            const totalXP = dailyTasks.reduce((sum, t) => sum + t.xp, 0);
-            const bonusXP = Math.max(50, currentStreak * 5);
-
-            // Update streak and award bonus XP
-            const streakResponse = await fetch(
-              "/api/gamification/update-streak",
-              {
-                method: "POST",
-              }
-            );
-
-            if (streakResponse.ok) {
-              const streakData = await streakResponse.json();
-
-              // Award bonus XP for completing all tasks
-              await fetch("/api/gamification/award-xp", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  amount: bonusXP,
-                  reason: "Daily Challenge completion bonus",
-                  category: "DAILY_CHALLENGE",
-                }),
-              });
-
-              addToast({
-                type: "success",
-                title: "Daily Challenge Complete! 🏆",
-                message: `Amazing! You earned ${
-                  totalXP + bonusXP
-                } total XP and maintained your ${
-                  streakData.streak?.currentStreak || currentStreak + 1
-                }-day streak!`,
-                duration: 8000,
-              });
-
-              // Show achievement notifications
-              if (
-                streakData.newAchievements &&
-                streakData.newAchievements.length > 0
-              ) {
-                setTimeout(() => {
-                  streakData.newAchievements.forEach(
-                    (achievement: any, index: number) => {
-                      setTimeout(() => {
-                        addToast({
-                          type: "success",
-                          title: `🏆 Achievement Unlocked!`,
-                          message: `"${achievement.name}" - ${achievement.description}`,
-                          duration: 6000,
-                        });
-                      }, index * 1000);
-                    }
-                  );
-                }, 2000);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error completing task:", error);
-        addToast({
-          type: "error",
-          title: "Error",
-          message: "Failed to complete task. Please try again.",
-          duration: 3000,
-        });
-      }
+    if (onNavigate && task.redirectTo) {
+      console.log("Navigating to:", task.redirectTo);
+      onNavigate(task.redirectTo);
+    } else {
+      console.error(
+        "Navigation failed - onNavigate:",
+        !!onNavigate,
+        "redirectTo:",
+        task.redirectTo
+      );
+      addToast({
+        type: "error",
+        title: "Navigation Error",
+        message: "Could not navigate to exercise. Please try again.",
+        duration: 3000,
+      });
     }
   };
 
-  if (isLoading) {
+  const handleCompleteTask = async (
+    taskId: string,
+    taskType: string,
+    isCorrect: boolean,
+    timeSpent: number
+  ) => {
+    if (completedTasks.includes(taskId)) {
+      return; // Already completed
+    }
+
+    const task = dailyTasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    try {
+      // Award XP for the task
+      const xpResponse = await fetch("/api/gamification/award-xp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: task.xp,
+          reason: `Completed daily task: ${task.title}`,
+          category: "DAILY_CHALLENGE",
+        }),
+      });
+
+      if (xpResponse.ok) {
+        const xpData = await xpResponse.json();
+
+        // Save completion to database
+        await saveCompletion(taskId, taskType, isCorrect, timeSpent, task.xp);
+
+        // Update local state
+        const newCompleted = [...completedTasks, taskId];
+        setCompletedTasks(newCompleted);
+
+        addToast({
+          type: "success",
+          title: "Task Completed! 🎉",
+          message: `You earned ${task.xp} XP for "${task.title}"`,
+          duration: 4000,
+        });
+
+        // Show level up notification if applicable
+        if (xpData.leveledUp) {
+          addToast({
+            type: "success",
+            title: `🎉 Level Up! You're now Level ${xpData.newLevel}!`,
+            message: `Congratulations on reaching Level ${xpData.newLevel}!`,
+            duration: 5000,
+          });
+        }
+
+        // Check if all tasks completed
+        if (newCompleted.length === dailyTasks.length) {
+          const totalXP = dailyTasks.reduce((sum, t) => sum + t.xp, 0);
+          const bonusXP = Math.max(50, currentStreak * 5);
+
+          // Update streak and award bonus XP
+          const streakResponse = await fetch(
+            "/api/gamification/update-streak",
+            {
+              method: "POST",
+            }
+          );
+
+          if (streakResponse.ok) {
+            const streakData = await streakResponse.json();
+
+            // Award bonus XP for completing all tasks
+            await fetch("/api/gamification/award-xp", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amount: bonusXP,
+                reason: "Daily Challenge completion bonus",
+                category: "DAILY_CHALLENGE",
+              }),
+            });
+
+            addToast({
+              type: "success",
+              title: "Daily Challenge Complete! 🏆",
+              message: `Amazing! You earned ${
+                totalXP + bonusXP
+              } total XP and maintained your ${
+                streakData.streak?.currentStreak || currentStreak + 1
+              }-day streak!`,
+              duration: 8000,
+            });
+
+            // Show achievement notifications
+            if (
+              streakData.newAchievements &&
+              streakData.newAchievements.length > 0
+            ) {
+              setTimeout(() => {
+                streakData.newAchievements.forEach(
+                  (achievement: any, index: number) => {
+                    setTimeout(() => {
+                      addToast({
+                        type: "success",
+                        title: `🏆 Achievement Unlocked!`,
+                        message: `"${achievement.name}" - ${achievement.description}`,
+                        duration: 6000,
+                      });
+                    }, index * 1000);
+                  }
+                );
+              }, 2000);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error completing task:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to complete task. Please try again.",
+        duration: 3000,
+      });
+    }
+  };
+
+  if (isLoading || completionsLoading) {
     return (
       <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="text-gray-600">
-            Generating your personalized daily challenges...
+            {isLoading
+              ? "Generating your personalized daily challenges..."
+              : "Loading your progress..."}
           </p>
         </div>
       </div>
@@ -423,7 +620,12 @@ export function DailyChallenge() {
         <div className="grid gap-4">
           {dailyTasks.map((task, index) => {
             const isCompleted = completedTasks.includes(task.id);
-            const isActive = activeTask?.id === task.id;
+            const activeDailyChallenge = localStorage.getItem(
+              "activeDailyChallenge"
+            );
+            const isActive = activeDailyChallenge
+              ? JSON.parse(activeDailyChallenge).taskId === task.id
+              : false;
 
             return (
               <Card

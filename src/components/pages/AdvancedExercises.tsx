@@ -33,7 +33,11 @@ interface ErrorCorrectionData {
   topic: string;
 }
 
-export function AdvancedExercises() {
+interface AdvancedExercisesProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [currentExercise, setCurrentExercise] = useState<any>(null);

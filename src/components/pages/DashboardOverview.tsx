@@ -218,7 +218,7 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
           <div className="space-y-4">
             <p className="text-pink-600">
               Complete your daily German learning challenge to maintain your
-              streak and earn bonus XP!
+              streak and make you Chrisy proud! :D
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button size="lg" className="flex-1 sm:flex-none">

@@ -27,6 +27,7 @@ model User {
   exerciseResults ExerciseResult[]
   achievements    UserAchievement[]
   dailyStreak     DailyStreak?
+  dailyChallengeCompletions UserDailyChallengeCompletion[]
 
   @@map("users")
 }
@@ -144,6 +145,23 @@ model DailyChallenge {
   createdAt   DateTime @default(now())
 
   @@map("daily_challenges")
+}
+
+model UserDailyChallengeCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime // Date of the challenge
+  taskId      String   // ID of the specific task completed
+  taskType    String   // Type: vocabulary, grammar, reading, writing, sentence_construction
+  isCorrect   Boolean
+  timeSpent   Int      // in seconds
+  xpEarned    Int
+  completedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, taskId])
+  @@map("user_daily_challenge_completions")
 }
 
 // Vocabulary Management

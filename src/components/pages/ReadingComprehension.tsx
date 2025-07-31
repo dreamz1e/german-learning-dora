@@ -20,7 +20,13 @@ interface ReadingExerciseData {
   }>;
 }
 
-export function ReadingComprehension() {
+interface ReadingComprehensionProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function ReadingComprehension({
+  onNavigate,
+}: ReadingComprehensionProps = {}) {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [currentExercise, setCurrentExercise] =

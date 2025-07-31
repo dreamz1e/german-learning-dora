@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -20,7 +20,11 @@ interface GrammarExercise {
   englishText?: string;
 }
 
-export function GrammarPractice() {
+interface GrammarPracticeProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [currentExercise, setCurrentExercise] =
@@ -28,6 +32,7 @@ export function GrammarPractice() {
   const [isLoading, setIsLoading] = useState(false);
   const [difficulty, setDifficulty] = useState("A2_BASIC");
   const [grammarTopic, setGrammarTopic] = useState("");
+  const [isDailyChallenge, setIsDailyChallenge] = useState(false);
 
   const grammarTopics = [
     "Cases (Nominativ, Akkusativ, Dativ, Genitiv)",
@@ -41,6 +46,25 @@ export function GrammarPractice() {
     "Subordinate Clauses",
     "Reflexive Verbs",
   ];
+
+  // Check for daily challenge mode
+  useEffect(() => {
+    const activeDailyChallenge = localStorage.getItem("activeDailyChallenge");
+    if (activeDailyChallenge) {
+      const challenge = JSON.parse(activeDailyChallenge);
+      if (challenge.taskType === "grammar") {
+        setIsDailyChallenge(true);
+        setDifficulty(
+          challenge.difficulty === "Easy"
+            ? "A2_BASIC"
+            : challenge.difficulty === "Medium"
+            ? "B1_BASIC"
+            : "B1_ADVANCED"
+        );
+        generateExercise();
+      }
+    }
+  }, []);
 
   const generateExercise = async () => {
     if (!user) return;
@@ -84,14 +108,21 @@ export function GrammarPractice() {
 
     try {
       // Award XP for completing the exercise
-      const xpAmount = isCorrect ? 25 : 10; // Full XP for correct, partial for attempt
+      const baseXpAmount = isCorrect ? 25 : 10;
+      const xpAmount = isDailyChallenge
+        ? JSON.parse(localStorage.getItem("activeDailyChallenge") || "{}").xp ||
+          baseXpAmount
+        : baseXpAmount;
+
       await fetch("/api/gamification/award-xp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: xpAmount,
-          reason: `Grammar exercise: ${currentExercise.topic}`,
-          category: "EXERCISE",
+          reason: isDailyChallenge
+            ? "Completed daily challenge grammar task"
+            : `Grammar exercise: ${currentExercise.topic}`,
+          category: isDailyChallenge ? "DAILY_CHALLENGE" : "EXERCISE",
         }),
       });
 
@@ -104,6 +135,40 @@ export function GrammarPractice() {
         }`,
         duration: 4000,
       });
+
+      // Handle daily challenge completion
+      if (isDailyChallenge) {
+        const activeDailyChallenge = localStorage.getItem(
+          "activeDailyChallenge"
+        );
+        if (activeDailyChallenge) {
+          const challenge = JSON.parse(activeDailyChallenge);
+          localStorage.setItem(
+            "completedDailyChallenge",
+            JSON.stringify({
+              taskId: challenge.taskId,
+              taskType: challenge.taskType,
+              completed: true,
+              timeSpent: timeSpent,
+              isCorrect: isCorrect,
+              xpEarned: xpAmount,
+            })
+          );
+        }
+
+        addToast({
+          type: "success",
+          title: "Daily Challenge Complete! 🎉",
+          message: "Returning to Daily Challenges...",
+          duration: 3000,
+        });
+
+        setTimeout(() => {
+          if (onNavigate) {
+            onNavigate("daily-challenge");
+          }
+        }, 2000);
+      }
     } catch (error) {
       console.error("Error awarding XP:", error);
     }
@@ -115,9 +180,23 @@ export function GrammarPractice() {
     <div className="space-y-8">
       {/* Page Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Grammar Practice</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Grammar Practice
+          </h1>
+          {isDailyChallenge && (
+            <Badge
+              variant="success"
+              className="bg-pink-100 text-pink-700 border-pink-300"
+            >
+              🎯 Daily Challenge
+            </Badge>
+          )}
+        </div>
         <p className="text-muted-foreground text-lg">
-          Master German grammar with AI-generated exercises
+          {isDailyChallenge
+            ? "Complete this grammar exercise to finish your daily challenge!"
+            : "Master German grammar with AI-generated exercises"}
         </p>
       </div>
 

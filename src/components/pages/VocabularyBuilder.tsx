@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -28,7 +28,15 @@ interface VocabularyExercise {
   englishText?: string;
 }
 
-export function VocabularyBuilder() {
+interface VocabularyBuilderProps {
+  onNavigate?: (page: string) => void;
+  dailyChallengeContext?: any;
+}
+
+export function VocabularyBuilder({
+  onNavigate,
+  dailyChallengeContext,
+}: VocabularyBuilderProps = {}) {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [currentExercise, setCurrentExercise] =
@@ -38,6 +46,7 @@ export function VocabularyBuilder() {
   const [difficulty, setDifficulty] = useState("A2_BASIC");
   const [category, setCategory] = useState("");
   const [mode, setMode] = useState<"exercise" | "words">("exercise");
+  const [isDailyChallenge, setIsDailyChallenge] = useState(false);
 
   const vocabularyCategories = [
     "Daily Life",
@@ -53,6 +62,26 @@ export function VocabularyBuilder() {
     "Education & School",
     "Technology",
   ];
+
+  // Check for daily challenge mode on component mount
+  useEffect(() => {
+    const activeDailyChallenge = localStorage.getItem("activeDailyChallenge");
+    if (activeDailyChallenge) {
+      const challenge = JSON.parse(activeDailyChallenge);
+      if (challenge.taskType === "vocabulary") {
+        setIsDailyChallenge(true);
+        setDifficulty(
+          challenge.difficulty === "Easy"
+            ? "A2_BASIC"
+            : challenge.difficulty === "Medium"
+            ? "B1_BASIC"
+            : "B1_ADVANCED"
+        );
+        // Auto-generate exercise for daily challenge
+        generateExercise();
+      }
+    }
+  }, []);
 
   const generateExercise = async () => {
     if (!user) return;
@@ -129,14 +158,21 @@ export function VocabularyBuilder() {
     if (!user) return;
 
     try {
-      const xpAmount = isCorrect ? 20 : 8;
+      const baseXpAmount = isCorrect ? 20 : 8;
+      const xpAmount = isDailyChallenge
+        ? JSON.parse(localStorage.getItem("activeDailyChallenge") || "{}").xp ||
+          baseXpAmount
+        : baseXpAmount;
+
       await fetch("/api/gamification/award-xp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: xpAmount,
-          reason: `Vocabulary exercise: ${currentExercise?.topic}`,
-          category: "EXERCISE",
+          reason: isDailyChallenge
+            ? "Completed daily challenge vocabulary task"
+            : `Vocabulary exercise: ${currentExercise?.topic}`,
+          category: isDailyChallenge ? "DAILY_CHALLENGE" : "EXERCISE",
         }),
       });
 
@@ -148,6 +184,41 @@ export function VocabularyBuilder() {
         }`,
         duration: 4000,
       });
+
+      // Handle daily challenge completion
+      if (isDailyChallenge) {
+        const activeDailyChallenge = localStorage.getItem(
+          "activeDailyChallenge"
+        );
+        if (activeDailyChallenge) {
+          const challenge = JSON.parse(activeDailyChallenge);
+          localStorage.setItem(
+            "completedDailyChallenge",
+            JSON.stringify({
+              taskId: challenge.taskId,
+              taskType: challenge.taskType,
+              completed: true,
+              timeSpent: timeSpent,
+              isCorrect: isCorrect,
+              xpEarned: xpAmount,
+            })
+          );
+        }
+
+        addToast({
+          type: "success",
+          title: "Daily Challenge Complete! 🎉",
+          message: "Returning to Daily Challenges...",
+          duration: 3000,
+        });
+
+        // Navigate back to daily challenge after a delay
+        setTimeout(() => {
+          if (onNavigate) {
+            onNavigate("daily-challenge");
+          }
+        }, 2000);
+      }
     } catch (error) {
       console.error("Error awarding XP:", error);
     }
@@ -184,11 +255,23 @@ export function VocabularyBuilder() {
     <div className="space-y-8">
       {/* Page Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Vocabulary Builder
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Vocabulary Builder
+          </h1>
+          {isDailyChallenge && (
+            <Badge
+              variant="success"
+              className="bg-pink-100 text-pink-700 border-pink-300"
+            >
+              🎯 Daily Challenge
+            </Badge>
+          )}
+        </div>
         <p className="text-muted-foreground text-lg">
-          Expand your German vocabulary with AI-generated words and exercises
+          {isDailyChallenge
+            ? "Complete this vocabulary exercise to finish your daily challenge!"
+            : "Expand your German vocabulary with AI-generated words and exercises"}
         </p>
       </div>
 
