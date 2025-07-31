@@ -164,13 +164,27 @@ export function ExerciseContainer({
                         question.includes("German translation of") ||
                         question.includes("English word");
 
-                      // Show context text based on direction
-                      const contextText = isEnglishToGerman
-                        ? englishText
-                        : germanText;
-                      const translationText = isEnglishToGerman
-                        ? germanText
-                        : englishText;
+                      // For grammar exercises, don't show German text as context initially
+                      // since it often contains or is the correct answer
+                      const isGrammarExercise = type === "grammar";
+
+                      // Show context text based on exercise type and direction
+                      let contextText;
+                      let translationText;
+
+                      if (isGrammarExercise) {
+                        // For grammar exercises, only show English context (if available)
+                        contextText = englishText;
+                        translationText = germanText;
+                      } else {
+                        // For vocabulary/other exercises, use original logic
+                        contextText = isEnglishToGerman
+                          ? englishText
+                          : germanText;
+                        translationText = isEnglishToGerman
+                          ? germanText
+                          : englishText;
+                      }
 
                       return (
                         <>
