@@ -55,6 +55,7 @@ export function VocabularyBuilder({
     remaining: number;
     total: number;
   } | null>(null);
+  const [isGeneratingNewBatch, setIsGeneratingNewBatch] = useState(false);
 
   const vocabularyCategories = [
     "Daily Life",
@@ -162,6 +163,67 @@ export function VocabularyBuilder({
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generateNewBatch = async () => {
+    if (!user) return;
+
+    setIsGeneratingNewBatch(true);
+    try {
+      // Reset the current batch to force generation of a new one
+      const resetResponse = await fetch("/api/ai/reset-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "vocabulary",
+        }),
+      });
+
+      if (!resetResponse.ok) {
+        throw new Error("Failed to reset batch");
+      }
+
+      // Generate a new exercise from the new batch
+      const response = await fetch("/api/ai/generate-exercise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "vocabulary",
+          difficulty,
+          topic: category || undefined,
+          vocabularyDirection,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate new batch");
+      }
+
+      const data = await response.json();
+      setCurrentExercise(data.exercise);
+
+      // Update batch info if provided
+      if (data.batchInfo) {
+        setBatchInfo(data.batchInfo);
+      }
+
+      addToast({
+        type: "success",
+        title: "New Batch Generated",
+        message: "A fresh set of exercises has been created!",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error generating new batch:", error);
+      addToast({
+        type: "error",
+        title: "Generation Failed",
+        message: "Could not generate new batch. Please try again.",
+        duration: 4000,
+      });
+    } finally {
+      setIsGeneratingNewBatch(false);
     }
   };
 
@@ -509,9 +571,17 @@ export function VocabularyBuilder({
             <Button
               variant="outline"
               className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-              onClick={() => setCurrentExercise(null)}
+              onClick={generateNewBatch}
+              disabled={isGeneratingNewBatch}
             >
-              Generate New Exercise
+              {isGeneratingNewBatch ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Generating New Batch...</span>
+                </div>
+              ) : (
+                "Generate New Exercise"
+              )}
             </Button>
           </div>
 
@@ -528,6 +598,7 @@ export function VocabularyBuilder({
             englishText={currentExercise.englishText}
             onComplete={handleExerciseComplete}
             onNextExercise={generateExercise}
+            isLoadingNext={isLoading}
           />
         </div>
       )}

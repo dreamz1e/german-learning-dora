@@ -21,6 +21,7 @@ interface SentenceConstructionProps {
   explanation: string;
   onComplete: (isCorrect: boolean, timeSpent: number) => void;
   onNext: () => void;
+  isLoadingNext?: boolean;
 }
 
 export function SentenceConstructionExercise({
@@ -32,6 +33,7 @@ export function SentenceConstructionExercise({
   explanation,
   onComplete,
   onNext,
+  isLoadingNext = false,
 }: SentenceConstructionProps) {
   const [availableWords, setAvailableWords] = useState<WordBlock[]>([]);
   const [constructedSentence, setConstructedSentence] = useState<WordBlock[]>(
@@ -237,8 +239,20 @@ export function SentenceConstructionExercise({
                 Check Answer
               </Button>
             ) : (
-              <Button onClick={handleNext} size="lg" className="min-w-32">
-                Next Exercise
+              <Button
+                onClick={handleNext}
+                size="lg"
+                className="min-w-32"
+                disabled={isLoadingNext}
+              >
+                {isLoadingNext ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  "Next Exercise"
+                )}
               </Button>
             )}
           </div>

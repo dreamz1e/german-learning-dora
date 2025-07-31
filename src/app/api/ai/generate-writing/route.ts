@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
-import OpenAI from "openai";
 import { generateWritingExercise } from "@/lib/aiClient";
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
 
 const generateWritingSchema = z.object({
   difficulty: z.enum([

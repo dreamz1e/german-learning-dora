@@ -23,6 +23,7 @@ interface ErrorCorrectionProps {
   topic: string;
   onComplete: (score: number, timeSpent: number) => void;
   onNext: () => void;
+  isLoadingNext?: boolean;
 }
 
 export function ErrorCorrectionExercise({
@@ -34,6 +35,7 @@ export function ErrorCorrectionExercise({
   topic,
   onComplete,
   onNext,
+  isLoadingNext = false,
 }: ErrorCorrectionProps) {
   const [selectedErrors, setSelectedErrors] = useState<number[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -239,8 +241,20 @@ export function ErrorCorrectionExercise({
                   Check Errors
                 </Button>
               ) : (
-                <Button onClick={handleNext} size="lg" className="min-w-32">
-                  Next Exercise
+                <Button
+                  onClick={handleNext}
+                  size="lg"
+                  className="min-w-32"
+                  disabled={isLoadingNext}
+                >
+                  {isLoadingNext ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Loading...</span>
+                    </div>
+                  ) : (
+                    "Next Exercise"
+                  )}
                 </Button>
               )}
             </div>

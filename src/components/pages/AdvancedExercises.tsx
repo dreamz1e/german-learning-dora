@@ -47,6 +47,7 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [difficulty, setDifficulty] = useState("A2_BASIC");
   const [grammarFocus, setGrammarFocus] = useState("");
+  const [isGeneratingNewExercise, setIsGeneratingNewExercise] = useState(false);
 
   const grammarFocusOptions = [
     "Word Order",
@@ -98,6 +99,36 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generateNewExercise = async () => {
+    if (!user) return;
+
+    setIsGeneratingNewExercise(true);
+    try {
+      // Clear current exercise first
+      setCurrentExercise(null);
+
+      // Generate new exercise
+      await generateExercise();
+
+      addToast({
+        type: "success",
+        title: "New Exercise Generated",
+        message: "A fresh exercise has been created!",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error generating new exercise:", error);
+      addToast({
+        type: "error",
+        title: "Generation Failed",
+        message: "Could not generate new exercise. Please try again.",
+        duration: 4000,
+      });
+    } finally {
+      setIsGeneratingNewExercise(false);
     }
   };
 
@@ -332,9 +363,17 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
             <Button
               variant="outline"
               className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-              onClick={() => setCurrentExercise(null)}
+              onClick={generateNewExercise}
+              disabled={isGeneratingNewExercise}
             >
-              Generate New Exercise
+              {isGeneratingNewExercise ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Generating...</span>
+                </div>
+              ) : (
+                "Generate New Exercise"
+              )}
             </Button>
           </div>
 
@@ -348,6 +387,7 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
               explanation={currentExercise.explanation}
               onComplete={handleExerciseComplete}
               onNext={generateExercise}
+              isLoadingNext={isLoading}
             />
           ) : (
             <ErrorCorrectionExercise
@@ -359,6 +399,7 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
               topic={currentExercise.topic}
               onComplete={handleExerciseComplete}
               onNext={generateExercise}
+              isLoadingNext={isLoading}
             />
           )}
         </div>

@@ -318,6 +318,21 @@ export function getCurrentBatchInfo(
   };
 }
 
+export function resetExerciseBatch(
+  exerciseType: "vocabulary" | "grammar",
+  userId: string
+): void {
+  const key = `${exerciseType}_${userId}`;
+  const manager = exerciseCycleManagers.get(key);
+
+  if (manager) {
+    manager.currentBatch = null;
+    manager.currentIndex = 0;
+    exerciseCycleManagers.set(key, manager);
+    console.log(`Reset ${exerciseType} batch for user ${userId}`);
+  }
+}
+
 export async function generateVocabularyExercise(
   difficulty: string,
   topic?: string,

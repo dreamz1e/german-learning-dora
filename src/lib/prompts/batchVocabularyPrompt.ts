@@ -52,7 +52,7 @@ Each exercise must:
     isGermanToEnglish ? "ENGLISH TRANSLATION" : "GERMAN TRANSLATION"
   }, 3 incorrect ${isGermanToEnglish ? "ENGLISH" : "GERMAN"} distractors)
 - Have clear explanations
-- Include German + English example sentences
+- Include German + English example sentence
 - The correctAnswer field MUST be the ${
     isGermanToEnglish
       ? "English translation of the German word"
@@ -86,7 +86,7 @@ Return JSON:
       }",
       "explanation": "Brief explanation with context",
       "topic": "${topic}",
-      "germanText": "German example sentence",
+      "germanText": "One short German example sentence",
       "englishText": "English translation"
     }
     // ... 4 more exercises
