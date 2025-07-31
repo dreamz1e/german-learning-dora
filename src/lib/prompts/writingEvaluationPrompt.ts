@@ -8,43 +8,52 @@ export function createWritingEvaluationPrompt(
     .split(/\s+/)
     .filter((w) => w.length > 0).length;
 
-  return `You are a German language teacher. Evaluate this German text written by a ${difficulty} level English-speaking learner.
+  return `You are an expert German language teacher AI. Your task is to evaluate a German text written by a ${difficulty} level English-speaking learner. Your response MUST be a single, valid JSON object.
 
-Student's text: "${userText}"
+Student's Text:
+"""
+${userText}
+"""
+${originalPrompt ? `\nOriginal Prompt:\n"""\n${originalPrompt}\n"""` : ""}
 
-Provide a detailed evaluation with scores (0-100), error analysis, and feedback. Return your response as valid JSON only.
+Evaluate the text based on the standards for a ${difficulty} learner. Provide a detailed analysis with scores, error breakdown, and constructive feedback.
 
-Required JSON format:
+The evaluation MUST adhere to the following strict requirements:
+1.  **Calculate scores (0-100)** for grammar, vocabulary, structure, and an overall assessment.
+2.  **Provide a fully corrected version** of the student's text.
+3.  **Identify all grammar, vocabulary, spelling, and structural errors**.
+4.  **For each error, provide the exact start/end character positions**, the original text, the correction, the error type, its severity, and a clear explanation.
+5.  **Use specific error types**: grammar, vocabulary, spelling, syntax, punctuation, verb-conjugation, noun-declension, word-order, article-usage, preposition.
+6.  **Use clear severity levels**: minor, moderate, major.
+7.  **Provide concrete positive feedback** and actionable suggestions for improvement.
+
+The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
   "overallScore": 75,
   "grammarScore": 70,
   "vocabularyScore": 80,
   "structureScore": 75,
-  "correctedText": "The fully corrected version of the student's text",
+  "correctedText": "The fully corrected version of the student's text.",
   "errors": [
     {
       "start": 0,
       "end": 5,
-      "originalText": "wrong word",
-      "correctedText": "correct word",
+      "originalText": "the incorrect word/phrase",
+      "correctedText": "the corrected word/phrase",
       "errorType": "grammar",
       "severity": "moderate",
-      "explanation": "Brief explanation of the error",
-      "suggestion": "How to avoid this error"
+      "explanation": "A brief, clear explanation of the error.",
+      "suggestion": "A tip on how to avoid this error in the future."
     }
   ],
-  "positiveAspects": ["What the student did well"],
-  "improvementSuggestions": ["Areas to improve"],
+  "positiveAspects": [
+    "A specific example of what the student did well (e.g., 'Good use of subordinate clauses')."
+  ],
+  "improvementSuggestions": [
+    "A specific, actionable area for improvement (e.g., 'Focus on adjective endings in the dative case')."
+  ],
   "difficulty": "${difficulty}",
   "wordCount": ${wordCount}
 }
-
-Instructions:
-- Score based on ${difficulty} level expectations
-- Find all grammar, vocabulary, spelling, and structure errors
-- Provide exact character positions for each error
-- Use error types: grammar, vocabulary, spelling, syntax, punctuation, verb-conjugation, noun-declension, word-order, article-usage, preposition
-- Use severity levels: minor, moderate, major
-- Give constructive feedback in positiveAspects and improvementSuggestions
-- Return only the JSON object, no additional text`;
+`;
 }

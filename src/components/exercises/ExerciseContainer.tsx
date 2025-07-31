@@ -149,7 +149,7 @@ export function ExerciseContainer({
               {/* Question */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-foreground">
-                  {question}
+                  {question.replace(/__BLANK__/g, "_______")}
                 </h2>
 
                 {/* Context Sentence (if provided) */}
@@ -175,7 +175,10 @@ export function ExerciseContainer({
                       if (isGrammarExercise) {
                         // For grammar exercises, only show English context (if available)
                         contextText = englishText;
-                        translationText = germanText;
+                        translationText = germanText?.replace(
+                          /__BLANK__/g,
+                          "_______"
+                        );
                       } else {
                         // For vocabulary/other exercises, use original logic
                         contextText = isEnglishToGerman

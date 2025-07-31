@@ -37,67 +37,50 @@ export function batchVocabularyPrompt(
   const context = contextVariants[seedNum % contextVariants.length];
   const style = styleVariants[(seedNum + 7) % styleVariants.length];
   const isGermanToEnglish = direction === "german-to-english";
+  const fromLang = isGermanToEnglish ? "German" : "English";
+  const toLang = isGermanToEnglish ? "English" : "German";
 
-  return `Generate 5 diverse German vocabulary exercises for ${difficulty} level about "${topic}".
+  return `You are an expert German language curriculum creator AI. Your task is to generate a batch of high-quality vocabulary exercises. Your response MUST be a single, valid JSON object.
 
-Context: ${context} setting, ${style} style
-Translation direction: ${direction}
-Seed: ${variationSeed}
+Generate exactly 5 diverse German vocabulary exercises for the ${difficulty} level, focusing on "${topic}".
 
-Each exercise must:
-- Test different ${
-    isGermanToEnglish ? "German words" : "English words"
-  } within the topic
-- Include 4 options (1 correct ${
-    isGermanToEnglish ? "ENGLISH TRANSLATION" : "GERMAN TRANSLATION"
-  }, 3 incorrect ${isGermanToEnglish ? "ENGLISH" : "GERMAN"} distractors)
-- Have clear explanations
-- Include German + English example sentence
-- The correctAnswer field MUST be the ${
-    isGermanToEnglish
-      ? "English translation of the German word"
-      : "German translation of the English word"
-  }, NOT the ${isGermanToEnglish ? "German word itself" : "English word itself"}
-- DO NOT use words, which translate to the same word in the other language (e.g. "Laptop" and "Laptop" or "Smartphone" and "Smartphone");
+Variation Context:
+- Style: ${style}
+- Context: ${context}
+- Translation Direction: ${direction}
+- Seed: ${variationSeed}
 
-Return JSON:
+You MUST use the variation context to ensure the generated exercises are unique and distinct from previous requests.
+
+Each of the 5 exercises MUST adhere to the following strict requirements:
+1.  **Test a different vocabulary word** within the topic "${topic}". Do not repeat words.
+2.  **Provide 4 multiple-choice options**: 1 correct ${toLang} translation and 3 plausible but incorrect ${toLang} distractors.
+3.  **The "question" field MUST present the word to be translated**.
+4.  **The "correctAnswer" field MUST be the correct ${toLang} translation**. It MUST NOT be the original word from the question.
+5.  **Provide a clear, educational explanation** that clarifies the word's meaning and usage.
+6.  **Include one German and one English example sentence** demonstrating practical usage.
+7.  **AVOID direct cognates** or words that are identical in both languages (e.g., "Laptop," "Hobby").
+8.  **Incorporate the style ("${style}") and context ("${context}")** naturally into the exercises.
+
+The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
-  "batchId": "auto-generated",
+  "batchId": "auto-generated-uuid",
   "topic": "${topic}",
   "difficulty": "${difficulty}",
   "exercises": [
     {
       "type": "vocabulary",
       "difficulty": "${difficulty}",
-      "question": "${
-        isGermanToEnglish
-          ? "What does '[German word]' mean in English?"
-          : "What is the German translation of '[English word]'?"
-      }",
-      "options": [${
-        isGermanToEnglish
-          ? '"correct English translation", "incorrect English option 1", "incorrect English option 2", "incorrect English option 3"'
-          : '"correct German translation", "incorrect German option 1", "incorrect German option 2", "incorrect German option 3"'
-      }],
-      "correctAnswer": "${
-        isGermanToEnglish
-          ? "correct English translation"
-          : "correct German translation"
-      }",
-      "explanation": "Brief explanation with context",
+      "question": "What is the ${toLang} translation of '[${fromLang} word]?'",
+      "options": ["Correct ${toLang} Translation", "Incorrect ${toLang} Distractor 1", "Incorrect ${toLang} Distractor 2", "Incorrect ${toLang} Distractor 3"],
+      "correctAnswer": "Correct ${toLang} Translation",
+      "explanation": "A brief but clear explanation of the word's meaning, context, and usage.",
       "topic": "${topic}",
-      "germanText": "One short German example sentence",
-      "englishText": "English translation"
+      "germanText": "A practical German example sentence using the word.",
+      "englishText": "The corresponding English translation of the sentence."
     }
-    // ... 4 more exercises
+    // ... exactly 4 more exercise objects
   ]
 }
-
-Focus on practical, high-frequency vocabulary. Ensure variety and avoid repetition.
-
-CRITICAL: The correctAnswer MUST always be ${
-    isGermanToEnglish
-      ? "an English translation of the German word being tested, never the German word itself"
-      : "a German translation of the English word being tested, never the English word itself"
-  }!`;
+`;
 }

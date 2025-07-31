@@ -5,18 +5,16 @@ export function sentenceConstructionPrompt(
 ): string {
   const focus = grammarFocus || "word order, cases, or verb conjugation";
 
-  // Simple hash function for consistent variation
   function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
 
-  // Sentence construction variety elements
   const sentenceScenarios = [
     "planning weekend activities",
     "discussing work projects",
@@ -74,61 +72,44 @@ export function sentenceConstructionPrompt(
     "offering solutions",
   ];
 
-  // Use variation seed to deterministically select different elements
   const seedNum = variationSeed
     ? hashString(variationSeed)
     : Math.floor(Date.now() / 60000);
-  const scenarioIndex = seedNum % sentenceScenarios.length;
-  const structureIndex = (seedNum + 13) % grammaticalStructures.length;
-  const intentIndex = (seedNum + 23) % communicativeIntents.length;
+  const selectedScenario =
+    sentenceScenarios[seedNum % sentenceScenarios.length];
+  const selectedStructure =
+    grammaticalStructures[(seedNum + 13) % grammaticalStructures.length];
+  const selectedIntent =
+    communicativeIntents[(seedNum + 23) % communicativeIntents.length];
 
-  const selectedScenario = sentenceScenarios[scenarioIndex];
-  const selectedStructure = grammaticalStructures[structureIndex];
-  const selectedIntent = communicativeIntents[intentIndex];
+  return `You are an expert German language curriculum creator AI. Your task is to generate a unique sentence construction exercise. Your response MUST be a single, valid JSON object.
 
-  return `
-Create a German sentence construction exercise for ${difficulty} level learners (English speakers).
-Grammar focus: ${focus}
+Create a German sentence construction exercise for a ${difficulty} level learner, focusing on ${focus}.
 
-VARIATION CONTEXT (to ensure unique content):
-- Sentence scenario: ${selectedScenario}
-- Grammatical structure: ${selectedStructure}
-- Communicative intent: ${selectedIntent}
-- Variation seed: ${variationSeed || "auto-generated"}
+Variation Context (MUST be used to ensure uniqueness):
+- Scenario: ${selectedScenario}
+- Structure: ${selectedStructure}
+- Intent: ${selectedIntent}
+- Seed: ${variationSeed || "auto-generated"}
 
-IMPORTANT: Use the above context elements to create a UNIQUE sentence construction exercise that feels fresh and different from previous generations. Design a sentence about ${selectedScenario} using a ${selectedStructure} for the purpose of ${selectedIntent}.
+You MUST use the variation context to design a sentence about ${selectedScenario}, using a ${selectedStructure} to achieve the communicative intent of ${selectedIntent}.
 
-Requirements:
-- Create a meaningful German sentence (8-15 words)
-- Provide clear instruction in English about what to construct
-- Break the sentence into individual words for rearrangement
-- Include articles, prepositions, and other function words separately
-- Ensure the sentence tests important German grammar rules
-- Provide clear explanation of the grammar principles
+The exercise MUST adhere to the following strict requirements:
+1.  **Create a meaningful German sentence** (8-15 words) that tests a key grammar rule.
+2.  **Provide a clear instruction in English** about what the user needs to build.
+3.  **Break the complete sentence into individual word blocks** for rearrangement.
+4.  **The "correctSentence" MUST be the single valid sentence** that can be formed from the blocks.
+5.  **Provide a clear, detailed explanation** of the grammar and word order principles involved.
+6.  **The exercise MUST be original** and distinct from previous generations.
 
-Difficulty guidelines:
-- A2_BASIC: Simple word order, basic cases, present tense
-- A2_INTERMEDIATE: More complex word order, modal verbs, past tense
-- B1_BASIC: Subordinate clauses, all cases, complex structures
-- B1_INTERMEDIATE: Advanced word order, passive voice, subjunctive
-- B1_ADVANCED: Complex syntax, multiple clauses, sophisticated grammar
-
-ANTI-REPETITION REQUIREMENTS:
-- Create completely original sentences that haven't been used before
-- Use varied vocabulary and contexts from the specified scenario
-- Choose different names, locations, and specific details for each generation
-- Ensure the grammatical structure creates a distinct construction challenge
-- Make each sentence feel authentic to the specified scenario and intent
-
-Return ONLY a valid JSON object with this exact structure:
+The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
-  "instruction": "Clear instruction: 'Arrange these words to create a German sentence about ${selectedScenario} that achieves ${selectedIntent}'",
-  "correctSentence": "The complete correct German sentence using ${selectedStructure} structure",
-  "wordBlocks": ["word1", "word2", "word3", "word4", "etc"],
+  "instruction": "Arrange the words to form a coherent German sentence about ${selectedScenario} that is meant for ${selectedIntent}.",
+  "correctSentence": "The complete, correct German sentence using a ${selectedStructure}.",
+  "wordBlocks": ["word1", "word2", "word3", "etc."],
   "difficulty": "${difficulty}",
-  "topic": "grammar topic being tested, contextualized to the scenario",
-  "explanation": "Detailed explanation of the grammar rules and word order principles that apply to this sentence. Context: ${selectedScenario} using ${selectedStructure} for ${selectedIntent}"
+  "topic": "The grammar topic being tested, contextualized to the scenario.",
+  "explanation": "A detailed explanation of the grammar and word order rules, contextualized with: ${selectedScenario}, ${selectedStructure}, ${selectedIntent}."
 }
-
-Make the sentence practical and useful for communication while clearly testing the target grammar concept. Ensure ORIGINALITY by incorporating the variation context naturally.`;
+`;
 }

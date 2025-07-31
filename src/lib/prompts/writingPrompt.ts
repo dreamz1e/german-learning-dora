@@ -7,18 +7,16 @@ export function createWritingPrompt(
   const topicGuidance =
     topic || "daily life, personal experiences, or current events";
 
-  // Simple hash function for consistent variation
   function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
 
-  // Writing-specific variety elements
   const writingContexts = [
     "personal memoir",
     "professional proposal",
@@ -76,23 +74,19 @@ export function createWritingPrompt(
     "expressing opinions",
   ];
 
-  // Use variation seed to deterministically select different elements
   const seedNum = variationSeed
     ? hashString(variationSeed)
     : Math.floor(Date.now() / 60000);
-  const contextIndex = seedNum % writingContexts.length;
-  const audienceIndex = (seedNum + 9) % audienceTypes.length;
-  const purposeIndex = (seedNum + 17) % writingPurposes.length;
-
-  const selectedContext = writingContexts[contextIndex];
-  const selectedAudience = audienceTypes[audienceIndex];
-  const selectedPurpose = writingPurposes[purposeIndex];
+  const selectedContext = writingContexts[seedNum % writingContexts.length];
+  const selectedAudience = audienceTypes[(seedNum + 9) % audienceTypes.length];
+  const selectedPurpose =
+    writingPurposes[(seedNum + 17) % writingPurposes.length];
 
   const difficultyGuidelines = {
     A2_BASIC: {
       minWords: 50,
       maxWords: 100,
-      complexity: "simple sentences, basic vocabulary, present tense focus",
+      complexity: "simple sentences, basic vocabulary, present tense",
     },
     A2_INTERMEDIATE: {
       minWords: 80,
@@ -107,14 +101,12 @@ export function createWritingPrompt(
     B1_INTERMEDIATE: {
       minWords: 150,
       maxWords: 250,
-      complexity:
-        "sophisticated structure, abstract concepts, formal/informal register",
+      complexity: "sophisticated structure, abstract concepts, register",
     },
     B1_ADVANCED: {
       minWords: 200,
       maxWords: 300,
-      complexity:
-        "advanced vocabulary, cultural references, nuanced expression",
+      complexity: "advanced vocabulary, cultural references, nuance",
     },
   };
 
@@ -122,55 +114,47 @@ export function createWritingPrompt(
     difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines];
 
   const exerciseTypes = {
-    guided: "structured writing with specific prompts and guidelines",
+    guided: "structured writing with specific prompts",
     creative: "creative storytelling or imaginative writing",
     formal: "formal letter, email, or business communication",
     descriptive: "detailed description of people, places, or events",
   };
 
-  return `
-  Create a German writing exercise for ${difficulty} level learners (English speakers).
-  Topic: ${topicGuidance}
-  Exercise type: ${exerciseTypes[exerciseType as keyof typeof exerciseTypes]}
+  return `You are an expert German language curriculum creator AI. Your task is to generate a unique writing exercise prompt. Your response MUST be a single, valid JSON object.
 
-  VARIATION CONTEXT (to ensure unique content):
-  - Writing context: ${selectedContext}
-  - Target audience: ${selectedAudience}
-  - Writing purpose: ${selectedPurpose}
-  - Variation seed: ${variationSeed || "auto-generated"}
+Create a German writing exercise for a ${difficulty} level learner.
+- Topic: ${topicGuidance}
+- Type: ${exerciseTypes[exerciseType as keyof typeof exerciseTypes]}
 
-  IMPORTANT: Use the above context elements to create a UNIQUE writing exercise that feels fresh and different from previous generations. Design the prompt as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}.
-  
-  Requirements:
-  - Provide a clear, engaging writing prompt
-  - Include 4-6 specific guidelines to help structure the writing
-  - Set appropriate word count (${guidelines.minWords}-${
+Variation Context (MUST be used to ensure uniqueness):
+- Writing Context: ${selectedContext}
+- Target Audience: ${selectedAudience}
+- Writing Purpose: ${selectedPurpose}
+- Seed: ${variationSeed || "auto-generated"}
+
+You MUST use the variation context to design a unique prompt as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}.
+
+The exercise MUST adhere to the following strict requirements:
+1.  **Provide a clear, engaging writing prompt** that is culturally relevant.
+2.  **Include 4-6 specific guidelines** to help structure the writing and focus the learner.
+3.  **Set an appropriate word count** (${guidelines.minWords}-${
     guidelines.maxWords
-  } words)
-  - Ensure the task matches the complexity level: ${guidelines.complexity}
-  - Make it practical and relevant to real-world communication
+  } words) and complexity level.
+4.  **The prompt MUST be original** and distinct from previous generations, inspired by the variation context.
 
-  ANTI-REPETITION REQUIREMENTS:
-  - Create completely original writing scenarios that haven't been used before
-  - Use varied locations, situations, and specific details
-  - Ensure the audience and purpose create a unique writing challenge
-  - Incorporate fresh vocabulary and context relevant to the scenario
-  - Make each prompt feel distinct and engaging
-  
-  Return ONLY a valid JSON object with this exact structure:
-  {
-    "prompt": "Clear, engaging writing task designed as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}",
-    "difficulty": "${difficulty}",
-    "topic": "specific topic category reflecting the context",
-    "guidelines": [
-      "Guideline 1 for structuring the writing (context-specific)",
-      "Guideline 2 for content requirements (audience-specific)", 
-      "Guideline 3 for grammar/vocabulary focus (purpose-specific)",
-      "Guideline 4 for style or tone (appropriate to context and audience)"
-    ],
-    "minWords": ${guidelines.minWords},
-    "maxWords": ${guidelines.maxWords}
-  }
-  
-  Make the prompt engaging and culturally relevant to German-speaking countries. Ensure ORIGINALITY by incorporating the variation context naturally.`;
+The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
+{
+  "prompt": "A clear, engaging writing task designed as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}.",
+  "difficulty": "${difficulty}",
+  "topic": "A specific topic category reflecting the context.",
+  "guidelines": [
+    "Guideline 1 for structuring the writing (context-specific).",
+    "Guideline 2 for content requirements (audience-specific).",
+    "Guideline 3 for grammar/vocabulary focus (purpose-specific).",
+    "Guideline 4 for style or tone (appropriate for context and audience)."
+  ],
+  "minWords": ${guidelines.minWords},
+  "maxWords": ${guidelines.maxWords}
+}
+`;
 }

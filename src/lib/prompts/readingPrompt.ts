@@ -7,18 +7,16 @@ export function readingPrompt(
     topic ||
     "daily life, German culture, current events, travel, food, work, or social situations";
 
-  // Simple hash function for consistent variation
   function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
 
-  // Reading-specific variety elements
   const textTypes = [
     "news article",
     "personal blog post",
@@ -72,79 +70,48 @@ export function readingPrompt(
     "food culture",
   ];
 
-  // Use variation seed to deterministically select different elements
   const seedNum = variationSeed
     ? hashString(variationSeed)
     : Math.floor(Date.now() / 60000);
-  const textTypeIndex = seedNum % textTypes.length;
-  const perspectiveIndex = (seedNum + 7) % narrativePerspectives.length;
-  const contentIndex = (seedNum + 13) % contentFoci.length;
+  const selectedTextType = textTypes[seedNum % textTypes.length];
+  const selectedPerspective =
+    narrativePerspectives[(seedNum + 7) % narrativePerspectives.length];
+  const selectedContent = contentFoci[(seedNum + 13) % contentFoci.length];
 
-  const selectedTextType = textTypes[textTypeIndex];
-  const selectedPerspective = narrativePerspectives[perspectiveIndex];
-  const selectedContent = contentFoci[contentIndex];
+  return `You are an expert German language curriculum creator AI. Your task is to generate a unique reading comprehension exercise. Your response MUST be a single, valid JSON object.
 
-  return `
-Create an engaging German reading comprehension exercise for ${difficulty} level learners (English speakers).
-Topic focus: ${topicGuidance}
+Create an engaging German reading exercise for a ${difficulty} level learner.
+- Topic Focus: ${topicGuidance}
 
-VARIATION CONTEXT (to ensure unique content):
-- Text type: ${selectedTextType}
-- Narrative perspective: ${selectedPerspective}
-- Content focus: ${selectedContent}
-- Variation seed: ${variationSeed || "auto-generated"}
+Variation Context (MUST be used to ensure uniqueness):
+- Text Type: ${selectedTextType}
+- Narrative Perspective: ${selectedPerspective}
+- Content Focus: ${selectedContent}
+- Seed: ${variationSeed || "auto-generated"}
 
-IMPORTANT: Use the above context elements to create a UNIQUE reading exercise that feels fresh and different from previous generations. Structure your text as a ${selectedTextType} with a ${selectedPerspective}, focusing on ${selectedContent}.
+You MUST use the variation context to create an original exercise. The text should be a ${selectedTextType} with a ${selectedPerspective}, focusing on ${selectedContent}.
 
-Requirements:
-- Write a German text of 150-250 words appropriate for the level
-- Create 3-4 comprehensive comprehension questions
-- Each question should have 4 multiple choice options
-- Include clear explanations for correct answers
-- Make content culturally relevant and interesting
-- Use authentic German language patterns
+The exercise MUST adhere to the following strict requirements:
+1.  **Write a German text** of 150-250 words, appropriate for the ${difficulty} level.
+2.  **Create 3-4 comprehension questions** that test understanding of the text.
+3.  **Each question must have 4 multiple-choice options**: one correct answer and three plausible but incorrect distractors.
+4.  **Provide a clear explanation** for each correct answer, referencing the relevant part of the text.
+5.  **Ensure content is culturally relevant, interesting, and authentic**.
+6.  **The text and questions MUST be original** and distinct from previous generations.
 
-Text guidelines by difficulty:
-- A2_BASIC: Simple sentences, basic vocabulary, present tense focus
-- A2_INTERMEDIATE: More complex sentences, past tense, common expressions
-- B1_BASIC: Varied sentence structures, subjunctive, abstract concepts
-- B1_INTERMEDIATE: Complex ideas, formal/informal registers, cultural nuances
-- B1_ADVANCED: Sophisticated content, implied meanings, cultural references
-
-Question types to include:
-- Main idea comprehension
-- Specific detail questions
-- Inference and implication
-- Vocabulary in context
-- Cultural understanding
-
-ANTI-REPETITION REQUIREMENTS:
-- Create completely original text content that hasn't been seen before
-- Use the specified text type and perspective to make content unique
-- Choose different locations, names, dates, and specific details
-- Vary sentence structures and vocabulary choices significantly
-- Ensure the content focus creates a distinct thematic experience
-
-Return ONLY a valid JSON object with this exact structure:
+The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
-  "title": "Engaging, descriptive title reflecting the ${selectedTextType} about ${selectedContent}",
-  "text": "German text (150-250 words) written as a ${selectedTextType} with ${selectedPerspective}, focusing on ${selectedContent}",
+  "title": "An engaging title reflecting the '${selectedTextType}' about '${selectedContent}'",
+  "text": "A German text (150-250 words) written as a ${selectedTextType} with a ${selectedPerspective}, focusing on ${selectedContent}.",
   "difficulty": "${difficulty}",
   "questions": [
     {
-      "question": "Clear question about the text content",
-      "options": ["correct answer", "plausible distractor 1", "plausible distractor 2", "plausible distractor 3"],
-      "correctAnswer": "correct answer",
-      "explanation": "Explanation of why this answer is correct, with reference to the text"
-    },
-    {
-      "question": "Another comprehension question",
-      "options": ["correct answer", "distractor 1", "distractor 2", "distractor 3"],
-      "correctAnswer": "correct answer", 
-      "explanation": "Clear reasoning for the correct answer"
+      "question": "A clear comprehension question about the text's content.",
+      "options": ["Correct Answer", "Plausible Distractor 1", "Plausible Distractor 2", "Plausible Distractor 3"],
+      "correctAnswer": "Correct Answer",
+      "explanation": "An explanation of why this answer is correct, with direct reference to the text."
     }
   ]
 }
-
-Make the text interesting, educational, and representative of real German usage and culture. Ensure ORIGINALITY by fully incorporating the variation context.`;
+`;
 }

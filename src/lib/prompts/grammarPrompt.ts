@@ -6,7 +6,7 @@ export function grammarPrompt(
 ): string {
   const topicGuidance =
     grammarTopic ||
-    "cases (Nominativ, Akkusativ, Dativ, Genitiv), verb conjugation, word order, prepositions, adjective endings, or modal verbs";
+    "a key German grammar rule such as cases, verb conjugation, word order, or prepositions";
 
   const exerciseTypes = {
     "multiple-choice": "multiple choice question with 4 options",
@@ -14,7 +14,6 @@ export function grammarPrompt(
     transformation: "sentence transformation exercise",
   };
 
-  // Variety-generating elements to prevent repetition
   const contextScenarios = [
     "workplace communication",
     "casual conversation",
@@ -57,90 +56,64 @@ export function grammarPrompt(
     "ongoing processes",
   ];
 
-  // Simple hash function for consistent variation
   function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
 
-  // Use variation seed to deterministically select different elements
   const seedNum = variationSeed
     ? hashString(variationSeed)
-    : Math.floor(Date.now() / 60000); // Changes every minute
-  const scenarioIndex = seedNum % contextScenarios.length;
-  const characterIndex = (seedNum + 3) % characterTypes.length;
-  const timeIndex = (seedNum + 7) % timeframes.length;
+    : Math.floor(Date.now() / 60000);
+  const selectedScenario = contextScenarios[seedNum % contextScenarios.length];
+  const selectedCharacters =
+    characterTypes[(seedNum + 3) % characterTypes.length];
+  const selectedTimeframe = timeframes[(seedNum + 7) % timeframes.length];
 
-  const selectedScenario = contextScenarios[scenarioIndex];
-  const selectedCharacters = characterTypes[characterIndex];
-  const selectedTimeframe = timeframes[timeIndex];
+  return `You are an expert German language curriculum creator AI. Your task is to generate a unique and grammatically flawless grammar exercise. Your response MUST be a single, valid JSON object.
 
-  return `
-Create a comprehensive German grammar exercise for ${difficulty} level learners (English speakers).
-Grammar focus: ${topicGuidance}
-Exercise type: ${exerciseTypes[exerciseType as keyof typeof exerciseTypes]}
+Create a comprehensive German grammar exercise for a ${difficulty} level learner.
+- Grammar Focus: ${topicGuidance}
+- Exercise Type: ${exerciseTypes[exerciseType as keyof typeof exerciseTypes]}
 
-VARIATION CONTEXT (to ensure unique content):
-- Scenario setting: ${selectedScenario}
-- Character types: ${selectedCharacters}
-- Timeframe focus: ${selectedTimeframe}
-- Variation seed: ${variationSeed || "auto-generated"}
+Variation Context (MUST be used to ensure uniqueness):
+- Scenario: ${selectedScenario}
+- Characters: ${selectedCharacters}
+- Timeframe: ${selectedTimeframe}
+- Seed: ${variationSeed || "auto-generated"}
 
-IMPORTANT: Use the above context elements to create a UNIQUE exercise that feels fresh and different from previous generations. Incorporate the scenario, character types, and timeframe naturally into your grammar exercise.
+The exercise MUST adhere to the following strict requirements:
+1.  **Unambiguous Correctness Rule**: There MUST be only one correct answer among the options. The correct answer must be unambiguously and contextually correct. The distractors must be plausible but definitively wrong.
+    - **Good Example**: "Wir müssen unbedingt __ über __ deinen Urlaub reden." (Correct: "über", Distractors: "mit", "von", "an") -> This is good because only "über" fits the context of discussing a topic.
+    - **Bad Example**: "Wir müssen unbedingt __ deinen Urlaub reden." (Correct: "mit", Distractors: "über", "von", "an") -> This is bad because the correct answer is grammatically wrong in the sentence, creating confusion.
 
-Requirements:
-- Create a practical, contextual German sentence or dialogue
-- Test specific grammar knowledge relevant to the difficulty level
-- Include clear, educational explanations of grammar rules
-- Make content culturally relevant and authentic
-- Use real-world scenarios that learners will encounter
-- Provide detailed reasoning for correct answers
+2.  **Strict Placeholder and Deconstruction Rule**:
+    - If a verb phrase needs to be split, you MUST use multiple '__BLANK__' placeholders.
+    - The 'correctAnswer' MUST then contain the parts in order, separated by a space.
+    - **Correct Example**: question: "Vor dem Interview __BLANK__ sich der Moderator den Ablauf __BLANK__.", correctAnswer: "stellte vor"
+    - **Never provide a multi-word answer choice for a single blank.**
 
-Grammar complexity by difficulty:
-- A2_BASIC: Basic case usage, present tense verbs, simple word order, basic prepositions
-- A2_INTERMEDIATE: Past tense, modal verbs, dative case, compound sentences, common adjective endings
-- B1_BASIC: All four cases, subjunctive mood, complex word order, subordinate clauses, advanced prepositions
-- B1_INTERMEDIATE: Passive voice, conditional sentences, formal/informal register, complex adjective declensions
-- B1_ADVANCED: Advanced subjunctive usage, sophisticated syntax, nuanced grammar rules, literary constructions
+3.  **Grammatical Integrity**: The final sentence, when blanks are filled with the correct answer, MUST be 100% grammatically correct, logical, and natural-sounding.
 
-Key grammar areas to test:
-- Case system: proper use of Nominativ, Akkusativ, Dativ, Genitiv
-- Verb conjugation: regular/irregular verbs, tenses, mood
-- Word order: main clauses, subordinate clauses, question formation
-- Adjective endings: weak, strong, and mixed declensions
-- Prepositions: case requirements and usage contexts
-- Modal verbs: meanings and conjugation patterns
-- Articles: definite, indefinite, and case changes
+4.  **Provide a clear question or instruction**.
+5.  **Include one correct answer and three plausible distractors** that target common learner errors.
+6.  **Provide a detailed, educational explanation**.
+7.  **The exercise MUST be original** and distinct from previous generations.
 
-Distractor guidelines (for multiple choice):
-- Include common learner errors (wrong case, incorrect verb form, word order mistakes)
-- Make options plausible but clearly distinguishable to knowledgeable speakers
-- Test different aspects of the grammar rule being taught
-- Include typical interference from English grammar patterns
-
-ANTI-REPETITION REQUIREMENTS:
-- Create completely original content that hasn't been seen before
-- Use the provided scenario context to make the exercise unique
-- Vary your vocabulary choices and sentence structures
-- Choose different names, places, and specific details each time
-- Ensure the grammar examples feel fresh and unexpected
-
-Return ONLY a valid JSON object with this exact structure:
+The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
   "type": "grammar",
   "difficulty": "${difficulty}",
-  "question": "Clear question or instruction about what grammar rule to apply",
-  "germanText": "German sentence or dialogue providing context for the grammar point (incorporating the scenario: ${selectedScenario})",
-  "options": ["correct answer", "distractor with common error 1", "distractor with common error 2", "distractor with common error 3"],
-  "correctAnswer": "correct answer",
-  "explanation": "Detailed explanation of the grammar rule, why this answer is correct, and common mistakes to avoid. Include variation context: ${selectedScenario} + ${selectedCharacters} + ${selectedTimeframe}",
-  "topic": "specific grammar topic being tested (e.g., 'Dative Case', 'Modal Verbs', 'Word Order')"
+  "question": "A grammatically correct sentence with one or more '__BLANK__' placeholders.",
+  "germanText": "A German sentence providing context.",
+  "options": ["Correct Answer", "Plausible Distractor 1", "Plausible Distractor 2", "Plausible Distractor 3"],
+  "correctAnswer": "Correct Answer",
+  "explanation": "A detailed explanation of the grammar rule, contextualized with the variation context.",
+  "topic": "The specific grammar topic being tested."
 }
-
-Make the exercise practical, educational, and representative of how Germans actually use the language in everyday situations. Ensure ORIGINALITY by incorporating the variation context naturally.`;
+`;
 }

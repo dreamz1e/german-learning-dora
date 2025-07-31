@@ -5,20 +5,19 @@ export function vocabularyWordsPrompt(
   variationSeed?: string
 ): string {
   const categoryGuidance =
-    category || "mix of useful everyday words from different categories";
+    category ||
+    "a mix of useful, high-frequency words from different categories";
 
-  // Simple hash function for consistent variation
   function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
 
-  // Vocabulary words variety elements
   const thematicFoci = [
     "urban lifestyle",
     "rural traditions",
@@ -76,78 +75,43 @@ export function vocabularyWordsPrompt(
     "artistic works",
   ];
 
-  // Use variation seed to deterministically select different elements
   const seedNum = variationSeed
     ? hashString(variationSeed)
     : Math.floor(Date.now() / 60000);
-  const themeIndex = seedNum % thematicFoci.length;
-  const settingIndex = (seedNum + 19) % contextualSettings.length;
-  const usageIndex = (seedNum + 31) % usageEmphases.length;
+  const selectedTheme = thematicFoci[seedNum % thematicFoci.length];
+  const selectedSetting =
+    contextualSettings[(seedNum + 19) % contextualSettings.length];
+  const selectedUsage = usageEmphases[(seedNum + 31) % usageEmphases.length];
 
-  const selectedTheme = thematicFoci[themeIndex];
-  const selectedSetting = contextualSettings[settingIndex];
-  const selectedUsage = usageEmphases[usageIndex];
+  return `You are an expert German language curriculum creator AI. Your task is to generate a list of vocabulary words. Your response MUST be a single, valid JSON array.
 
-  return `
-Generate ${count} high-frequency German vocabulary words for ${difficulty} level learners (English speakers).
-Category focus: ${categoryGuidance}
+Generate exactly ${count} high-frequency German vocabulary words for a ${difficulty} level learner.
+- Category Focus: ${categoryGuidance}
 
-VARIATION CONTEXT (to ensure unique content):
-- Thematic focus: ${selectedTheme}
-- Contextual setting: ${selectedSetting}
-- Usage emphasis: ${selectedUsage}
-- Variation seed: ${variationSeed || "auto-generated"}
+Variation Context (MUST be used to ensure uniqueness):
+- Thematic Focus: ${selectedTheme}
+- Contextual Setting: ${selectedSetting}
+- Usage Emphasis: ${selectedUsage}
+- Seed: ${variationSeed || "auto-generated"}
 
-IMPORTANT: Use the above context elements to create a UNIQUE vocabulary selection that feels fresh and different from previous generations. Focus on words related to ${selectedTheme} that would be used in ${selectedSetting} for ${selectedUsage}.
+You MUST use the variation context to generate a unique and cohesive word list related to the theme, setting, and usage.
 
-Requirements:
-- Include practical, commonly used German words
-- Add natural example sentences in German
-- Ensure words are appropriate for the difficulty level
-- Focus on words learners will actually encounter and use
-- Include varied word types (nouns, verbs, adjectives, expressions)
+Each item in the list MUST adhere to the following strict requirements:
+1.  **Include a practical, commonly used German word** or expression.
+2.  **Provide an accurate English translation**.
+3.  **Include a natural German example sentence** that demonstrates the word's usage in the specified context.
+4.  **The words MUST be appropriate** for the ${difficulty} level.
+5.  **The list MUST be original** and distinct from previous generations.
 
-Difficulty guidelines:
-- A2_BASIC: Essential everyday vocabulary, basic concepts
-- A2_INTERMEDIATE: More specific vocabulary, common expressions
-- B1_BASIC: Professional/academic vocabulary, abstract concepts
-- B1_INTERMEDIATE: Nuanced vocabulary, idiomatic expressions
-- B1_ADVANCED: Sophisticated vocabulary, cultural expressions
-
-Word categories to consider:
-- Daily life: family, home, routine activities
-- Food & drinks: meals, ingredients, restaurants
-- Work & education: professions, school, office
-- Travel & transportation: vehicles, directions, accommodation
-- Health & body: medical terms, body parts, feelings
-- Weather & nature: seasons, climate, environment
-- Technology & media: internet, phones, entertainment
-- Culture & society: traditions, celebrations, social issues
-
-ANTI-REPETITION REQUIREMENTS:
-- Select completely different German words from previous generations
-- Use varied vocabulary from the specified thematic focus and contextual setting
-- Create original example sentences that reflect the usage emphasis
-- Avoid repeating common or predictable word choices
-- Ensure each word set feels unique and contextually cohesive
-
-Return ONLY a valid JSON array with this exact structure:
+The output MUST be a single, valid JSON array with the specified number of objects. Do NOT include any markdown, comments, or other text outside of the JSON.
 [
   {
-    "german": "German word or expression related to ${selectedTheme}",
-    "english": "Accurate English translation",
+    "german": "A German word or expression related to '${selectedTheme}'",
+    "english": "The accurate English translation",
     "difficulty": "${difficulty}",
-    "category": "word category reflecting the thematic focus",
-    "exampleSentence": "Natural German sentence using the word in ${selectedSetting} for ${selectedUsage}"
-  },
-  {
-    "german": "Another German word from the thematic context",
-    "english": "English translation",
-    "difficulty": "${difficulty}",
-    "category": "word category relevant to the context",
-    "exampleSentence": "Another natural German example sentence in the specified setting"
+    "category": "A word category reflecting the thematic focus",
+    "exampleSentence": "A natural German sentence demonstrating the word's usage in '${selectedSetting}' for '${selectedUsage}'."
   }
 ]
-
-Focus on high-frequency, practical vocabulary that will help learners communicate effectively in German. Ensure ORIGINALITY by incorporating the variation context naturally.`;
+`;
 }

@@ -6,18 +6,16 @@ export function translationPrompt(
   const fromLang = direction === "english-to-german" ? "English" : "German";
   const toLang = direction === "english-to-german" ? "German" : "English";
 
-  // Simple hash function for consistent variation
   function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
 
-  // Translation-specific variety elements
   const communicationContexts = [
     "business correspondence",
     "casual social interaction",
@@ -71,74 +69,44 @@ export function translationPrompt(
     "personal intimate",
   ];
 
-  // Use variation seed to deterministically select different elements
   const seedNum = variationSeed
     ? hashString(variationSeed)
     : Math.floor(Date.now() / 60000);
-  const contextIndex = seedNum % communicationContexts.length;
-  const purposeIndex = (seedNum + 11) % functionalPurposes.length;
-  const registerIndex = (seedNum + 19) % registerStyles.length;
+  const selectedContext =
+    communicationContexts[seedNum % communicationContexts.length];
+  const selectedPurpose =
+    functionalPurposes[(seedNum + 11) % functionalPurposes.length];
+  const selectedRegister =
+    registerStyles[(seedNum + 19) % registerStyles.length];
 
-  const selectedContext = communicationContexts[contextIndex];
-  const selectedPurpose = functionalPurposes[purposeIndex];
-  const selectedRegister = registerStyles[registerIndex];
+  return `You are an expert German language curriculum creator AI. Your task is to generate a unique translation exercise. Your response MUST be a single, valid JSON object.
 
-  return `
-Create a translation exercise for ${difficulty} level German learners (English speakers).
-Translation direction: ${fromLang} to ${toLang}
+Create a translation exercise for a ${difficulty} level learner.
+- Direction: ${fromLang} to ${toLang}
 
-VARIATION CONTEXT (to ensure unique content):
-- Communication context: ${selectedContext}
-- Functional purpose: ${selectedPurpose}
-- Register style: ${selectedRegister}
-- Variation seed: ${variationSeed || "auto-generated"}
+Variation Context (MUST be used to ensure uniqueness):
+- Communication Context: ${selectedContext}
+- Functional Purpose: ${selectedPurpose}
+- Register Style: ${selectedRegister}
+- Seed: ${variationSeed || "auto-generated"}
 
-IMPORTANT: Use the above context elements to create a UNIQUE translation exercise that feels fresh and different from previous generations. Create a sentence that fits the ${selectedContext} context, serves the purpose of ${selectedPurpose}, and uses a ${selectedRegister} style.
+You MUST use the variation context to create an original sentence that fits the specified context, purpose, and register.
 
-Requirements:
-- Create a practical, authentic sentence for translation
-- Provide 4 multiple choice options (1 correct, 3 plausible distractors)
-- Include clear explanation of grammar and vocabulary choices
-- Use contextually relevant, real-world content
-- Test both vocabulary and grammatical understanding
+The exercise MUST adhere to the following strict requirements:
+1.  **Create a practical, authentic sentence** for translation that is appropriate for the ${difficulty} level.
+2.  **Provide 4 multiple-choice options**: 1 correct translation and 3 plausible distractors that test common errors.
+3.  **Include a clear explanation** of the grammar, vocabulary, and cultural nuances that make the correct answer the best choice.
+4.  **Ensure the exercise is original** and distinct from previous generations, inspired by the variation context.
 
-Sentence complexity by difficulty:
-- A2_BASIC: Simple sentences, basic vocabulary, common structures
-- A2_INTERMEDIATE: Compound sentences, more vocabulary, basic idioms
-- B1_BASIC: Complex sentences, formal/informal register, cultural context
-- B1_INTERMEDIATE: Nuanced expressions, advanced grammar, idiomatic language
-- B1_ADVANCED: Sophisticated language, cultural references, complex syntax
-
-Focus areas to test:
-- Case usage (if translating to German)
-- Verb conjugation and tense
-- Word order differences
-- Idiomatic expressions
-- Cultural context
-- Formal vs informal register
-
-Distractor guidelines:
-- Make options believable but clearly wrong
-- Include common learner errors
-- Test different aspects (grammar vs vocabulary vs word order)
-
-ANTI-REPETITION REQUIREMENTS:
-- Create completely original sentences that haven't been used before
-- Use varied vocabulary and contexts from the specified communication scenario
-- Choose different names, locations, and specific details for each generation
-- Ensure the register style creates a distinct translation challenge
-- Make each sentence feel authentic to the specified context and purpose
-
-Return ONLY a valid JSON object with this exact structure:
+The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
   "type": "translation",
   "difficulty": "${difficulty}",
-  "question": "Translate to ${toLang}: '[${fromLang} sentence in ${selectedContext} context with ${selectedRegister} style]'",
-  "options": ["correct translation", "distractor with grammar error", "distractor with vocabulary error", "distractor with word order error"],
-  "correctAnswer": "correct translation",
-  "explanation": "Clear explanation of grammar rules, vocabulary choices, and cultural context that make this translation correct. Context: ${selectedContext} for ${selectedPurpose}",
+  "question": "Translate to ${toLang}: '[${fromLang} sentence reflecting ${selectedContext}, ${selectedRegister} style]'",
+  "options": ["Correct Translation", "Distractor with Grammar Error", "Distractor with Vocabulary Error", "Distractor with Word Order Error"],
+  "correctAnswer": "Correct Translation",
+  "explanation": "A clear explanation of the translation choices, contextualized with: ${selectedContext} for ${selectedPurpose}.",
   "topic": "translation"
 }
-
-Make it practical and help learners understand both languages better through comparison. Ensure ORIGINALITY by incorporating the variation context naturally.`;
+`;
 }
