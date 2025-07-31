@@ -170,21 +170,16 @@ export function VocabularyBuilder({
     if (!user) return;
 
     setIsGeneratingNewBatch(true);
+    setIsLoading(true);
+
+    // Clear current exercise and batch info immediately
+    setCurrentExercise(null);
+    setBatchInfo(null);
+
     try {
-      // Reset the current batch to force generation of a new one
-      const resetResponse = await fetch("/api/ai/reset-batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "vocabulary",
-        }),
-      });
+      console.log("Starting new batch generation for vocabulary...");
 
-      if (!resetResponse.ok) {
-        throw new Error("Failed to reset batch");
-      }
-
-      // Generate a new exercise from the new batch
+      // Generate a new exercise with forceNewBatch flag
       const response = await fetch("/api/ai/generate-exercise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -193,19 +188,24 @@ export function VocabularyBuilder({
           difficulty,
           topic: category || undefined,
           vocabularyDirection,
+          forceNewBatch: true,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate new batch");
+        const errorText = await response.text();
+        console.error("Generate new batch failed:", errorText);
+        throw new Error(`Failed to generate new batch: ${errorText}`);
       }
 
       const data = await response.json();
+      console.log("New batch generated:", data);
       setCurrentExercise(data.exercise);
 
       // Update batch info if provided
       if (data.batchInfo) {
         setBatchInfo(data.batchInfo);
+        console.log("New batch info:", data.batchInfo);
       }
 
       addToast({
@@ -224,6 +224,7 @@ export function VocabularyBuilder({
       });
     } finally {
       setIsGeneratingNewBatch(false);
+      setIsLoading(false);
     }
   };
 
@@ -580,7 +581,7 @@ export function VocabularyBuilder({
                   <span>Generating New Batch...</span>
                 </div>
               ) : (
-                "Generate New Exercise"
+                "Generate New Batch"
               )}
             </Button>
           </div>

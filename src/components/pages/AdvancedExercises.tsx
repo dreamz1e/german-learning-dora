@@ -369,10 +369,10 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
               {isGeneratingNewExercise ? (
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Generating...</span>
+                  <span>Generating New Batch...</span>
                 </div>
               ) : (
-                "Generate New Exercise"
+                "Generate New Batch"
               )}
             </Button>
           </div>

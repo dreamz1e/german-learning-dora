@@ -7,6 +7,7 @@ import {
   generateTranslationExercise,
   getNextExercise,
   getCurrentBatchInfo,
+  resetExerciseBatch,
 } from "@/lib/aiClient";
 
 const generateExerciseSchema = z.object({
@@ -27,6 +28,7 @@ const generateExerciseSchema = z.object({
     .enum(["german-to-english", "english-to-german"])
     .optional(),
   useBatchSystem: z.boolean().default(true), // Enable batch system by default
+  forceNewBatch: z.boolean().default(false), // Force generation of a new batch
 });
 
 export const POST = withAuth(
@@ -41,7 +43,14 @@ export const POST = withAuth(
         vocabularyDirection,
         translationDirection,
         useBatchSystem,
+        forceNewBatch,
       } = generateExerciseSchema.parse(body);
+
+      // Force new batch generation if requested
+      if (forceNewBatch && (type === "vocabulary" || type === "grammar")) {
+        resetExerciseBatch(type, userId);
+        console.log(`Forced reset of ${type} batch for user ${userId}`);
+      }
 
       let exercise;
       let batchInfo = null;
