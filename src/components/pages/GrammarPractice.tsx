@@ -33,6 +33,11 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
   const [difficulty, setDifficulty] = useState("A2_BASIC");
   const [grammarTopic, setGrammarTopic] = useState("");
   const [isDailyChallenge, setIsDailyChallenge] = useState(false);
+  const [batchInfo, setBatchInfo] = useState<{
+    topic: string;
+    remaining: number;
+    total: number;
+  } | null>(null);
 
   const grammarTopics = [
     "Cases (Nominativ, Akkusativ, Dativ, Genitiv)",
@@ -87,6 +92,11 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
 
       const data = await response.json();
       setCurrentExercise(data.exercise);
+
+      // Update batch info if provided
+      if (data.batchInfo) {
+        setBatchInfo(data.batchInfo);
+      }
     } catch (error) {
       console.error("Error generating exercise:", error);
       addToast({
@@ -199,6 +209,45 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
             : "Master German grammar with AI-generated exercises"}
         </p>
       </div>
+
+      {/* Batch Progress Info */}
+      {batchInfo && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">📚</span>
+                <div>
+                  <h3 className="font-medium text-blue-800">
+                    Current Topic: {batchInfo.topic}
+                  </h3>
+                  <p className="text-sm text-blue-600">
+                    Batch Progress: {batchInfo.total - batchInfo.remaining} of{" "}
+                    {batchInfo.total} completed
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-16 h-2 bg-blue-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-300"
+                    style={{
+                      width: `${
+                        ((batchInfo.total - batchInfo.remaining) /
+                          batchInfo.total) *
+                        100
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="text-sm font-medium text-blue-700">
+                  {batchInfo.remaining} left
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Exercise Generator */}
       {!currentExercise && (

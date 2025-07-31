@@ -47,6 +47,11 @@ export function VocabularyBuilder({
   const [category, setCategory] = useState("");
   const [mode, setMode] = useState<"exercise" | "words">("exercise");
   const [isDailyChallenge, setIsDailyChallenge] = useState(false);
+  const [batchInfo, setBatchInfo] = useState<{
+    topic: string;
+    remaining: number;
+    total: number;
+  } | null>(null);
 
   const vocabularyCategories = [
     "Daily Life",
@@ -104,6 +109,11 @@ export function VocabularyBuilder({
 
       const data = await response.json();
       setCurrentExercise(data.exercise);
+
+      // Update batch info if provided
+      if (data.batchInfo) {
+        setBatchInfo(data.batchInfo);
+      }
     } catch (error) {
       console.error("Error generating exercise:", error);
       addToast({
@@ -305,6 +315,45 @@ export function VocabularyBuilder({
           </div>
         </CardContent>
       </Card>
+
+      {/* Batch Progress Info */}
+      {batchInfo && mode === "exercise" && (
+        <Card className="border-pink-200 bg-pink-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">🎯</span>
+                <div>
+                  <h3 className="font-medium text-pink-800">
+                    Current Topic: {batchInfo.topic}
+                  </h3>
+                  <p className="text-sm text-pink-600">
+                    Batch Progress: {batchInfo.total - batchInfo.remaining} of{" "}
+                    {batchInfo.total} completed
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-16 h-2 bg-pink-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-pink-500 transition-all duration-300"
+                    style={{
+                      width: `${
+                        ((batchInfo.total - batchInfo.remaining) /
+                          batchInfo.total) *
+                        100
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="text-sm font-medium text-pink-700">
+                  {batchInfo.remaining} left
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Generator Controls */}
       {(mode === "exercise" && !currentExercise) ||

@@ -479,3 +479,72 @@ export const WritingEvaluationSchema = {
     "wordCount",
   ],
 };
+
+// Batch Exercise Generation Schemas
+export const BatchGrammarExercisesSchema = {
+  type: "object",
+  properties: {
+    batchId: {
+      type: "string",
+      minLength: 1,
+      maxLength: 100,
+    },
+    topic: {
+      type: "string",
+      minLength: 3,
+      maxLength: 100,
+    },
+    difficulty: {
+      type: "string",
+      enum: [
+        "A2_BASIC",
+        "A2_INTERMEDIATE",
+        "B1_BASIC",
+        "B1_INTERMEDIATE",
+        "B1_ADVANCED",
+      ],
+    },
+    exercises: {
+      type: "array",
+      items: GermanExerciseSchema,
+      minItems: 5,
+      maxItems: 5,
+    },
+  },
+  required: ["batchId", "topic", "difficulty", "exercises"],
+  additionalProperties: false,
+};
+
+export const BatchVocabularyExercisesSchema = {
+  type: "object",
+  properties: {
+    batchId: {
+      type: "string",
+      minLength: 1,
+      maxLength: 100,
+    },
+    topic: {
+      type: "string",
+      minLength: 3,
+      maxLength: 100,
+    },
+    difficulty: {
+      type: "string",
+      enum: [
+        "A2_BASIC",
+        "A2_INTERMEDIATE",
+        "B1_BASIC",
+        "B1_INTERMEDIATE",
+        "B1_ADVANCED",
+      ],
+    },
+    exercises: {
+      type: "array",
+      items: GermanExerciseSchema,
+      minItems: 5,
+      maxItems: 5,
+    },
+  },
+  required: ["batchId", "topic", "difficulty", "exercises"],
+  additionalProperties: false,
+};

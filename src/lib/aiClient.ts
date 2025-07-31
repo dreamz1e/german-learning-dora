@@ -16,6 +16,8 @@ import {
   SentenceConstructionSchema,
   ErrorCorrectionSchema,
   WritingEvaluationSchema,
+  BatchGrammarExercisesSchema,
+  BatchVocabularyExercisesSchema,
 } from "./schemas";
 import { processAIResponse } from "./responseUtils";
 import { ContentTracker } from "./contentTracker";
@@ -169,6 +171,472 @@ export interface WritingEvaluation {
     | "B1_INTERMEDIATE"
     | "B1_ADVANCED";
   wordCount: number;
+}
+
+export interface BatchExercises {
+  batchId: string;
+  topic: string;
+  difficulty:
+    | "A2_BASIC"
+    | "A2_INTERMEDIATE"
+    | "B1_BASIC"
+    | "B1_INTERMEDIATE"
+    | "B1_ADVANCED";
+  exercises: GermanExercise[];
+}
+
+export interface ExerciseCycleManager {
+  currentBatch: BatchExercises | null;
+  currentIndex: number;
+  exerciseType: "vocabulary" | "grammar";
+  userId: string;
+  difficulty: string;
+  topicHistory: string[];
+}
+
+// Topic pools for varied content generation
+const vocabularyTopics = [
+  "Daily Life & Routine",
+  "Food & Cooking",
+  "Travel & Transportation",
+  "Work & Career",
+  "Health & Body",
+  "Family & Relationships",
+  "Hobbies & Leisure",
+  "Environment & Nature",
+  "Technology & Media",
+  "Shopping & Money",
+  "Education & Learning",
+  "Home & Living",
+];
+
+const grammarTopics = [
+  "Verb Conjugation & Tenses",
+  "Cases & Declensions",
+  "Word Order & Sentence Structure",
+  "Modal Verbs & Auxiliaries",
+  "Prepositions & Fixed Expressions",
+  "Adjective Endings & Comparison",
+  "Subordinate Clauses & Conjunctions",
+  "Passive Voice & Reflexive Verbs",
+  "Conditional & Subjunctive",
+  "Questions & Negation",
+];
+
+// In-memory exercise cycle managers (in production, this would be stored in database)
+const exerciseCycleManagers = new Map<string, ExerciseCycleManager>();
+
+function generateBatchId(): string {
+  return `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function selectRandomTopic(
+  topicPool: string[],
+  excludeTopics: string[] = []
+): string {
+  const availableTopics = topicPool.filter(
+    (topic) => !excludeTopics.includes(topic)
+  );
+  if (availableTopics.length === 0)
+    return topicPool[Math.floor(Math.random() * topicPool.length)];
+  return availableTopics[Math.floor(Math.random() * availableTopics.length)];
+}
+
+export async function generateBatchVocabularyExercises(
+  difficulty: string,
+  userId: string = "anonymous",
+  topic?: string
+): Promise<BatchExercises> {
+  const maxRetries = 3;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      const manager = exerciseCycleManagers.get(`vocab_${userId}`) || {
+        currentBatch: null,
+        currentIndex: 0,
+        exerciseType: "vocabulary" as const,
+        userId,
+        difficulty,
+        topicHistory: [],
+      };
+
+      // Select topic (either provided or random, avoiding recent ones)
+      const selectedTopic =
+        topic ||
+        selectRandomTopic(vocabularyTopics, manager.topicHistory.slice(-3));
+
+      // Generate variation seed for unique content
+      const variationSeed = ContentTracker.generateVariationSeed(
+        userId,
+        "vocabulary-batch",
+        difficulty,
+        selectedTopic
+      );
+
+      // Create a batch-optimized prompt
+      const batchPrompt = `Generate exactly 5 diverse German vocabulary exercises for ${difficulty} level about "${selectedTopic}".
+
+Each exercise should:
+1. Have a unique German word/phrase not used in other exercises in this batch
+2. Include 4 multiple choice options with exactly one correct answer
+3. Test different aspects of vocabulary (meaning, usage, synonyms, context)
+4. Have clear explanations that help learning
+5. Cover different subcategories within "${selectedTopic}"
+
+Return as JSON with this structure:
+{
+  "batchId": "generated_batch_id",
+  "topic": "${selectedTopic}",
+  "difficulty": "${difficulty}",
+  "exercises": [
+    {
+      "type": "vocabulary",
+      "difficulty": "${difficulty}",
+      "question": "What does 'das Brot' mean?",
+      "options": ["The bread", "The water", "The milk", "The cheese"],
+      "correctAnswer": "The bread",
+      "explanation": "Das Brot is the German word for bread, a staple food item.",
+      "topic": "${selectedTopic}",
+      "germanText": "das Brot",
+      "englishText": "the bread"
+    }
+    // ... 4 more exercises
+  ]
+}
+
+Variation seed: ${variationSeed}`;
+
+      const temperature = 0.8 + attempt * 0.1;
+
+      const response = await openai.chat.completions.create({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: batchPrompt,
+          },
+        ],
+        temperature: Math.min(temperature, 1.0),
+        max_tokens: 3000,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "batch_vocabulary_exercises",
+            schema: BatchVocabularyExercisesSchema,
+          },
+        },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("No content generated");
+
+      const batchExercises = processAIResponse<BatchExercises>(content, [
+        "batchId",
+        "topic",
+        "difficulty",
+        "exercises",
+      ]);
+
+      // Ensure all exercises have correct type and difficulty
+      batchExercises.exercises.forEach((exercise) => {
+        exercise.type = "vocabulary";
+        exercise.difficulty = difficulty as any;
+      });
+
+      // Set proper batch ID
+      batchExercises.batchId = generateBatchId();
+      batchExercises.difficulty = difficulty as any;
+
+      // Check for duplicates across the batch
+      const exerciseKeys = batchExercises.exercises.map(
+        (ex) => `${ex.question}-${ex.germanText || ""}`
+      );
+      const hasDuplicates = exerciseKeys.some(
+        (key, index) =>
+          exerciseKeys.indexOf(key) !== index || ContentTracker.isDuplicate(key)
+      );
+
+      if (hasDuplicates && attempt < maxRetries - 1) {
+        console.log(
+          `Duplicate content detected in vocabulary batch on attempt ${
+            attempt + 1
+          }, retrying...`
+        );
+        attempt++;
+        continue;
+      }
+
+      // Track all content to prevent future duplicates
+      exerciseKeys.forEach((key) => ContentTracker.trackContent(key));
+
+      // Update topic history
+      manager.topicHistory.push(selectedTopic);
+      if (manager.topicHistory.length > 5) {
+        manager.topicHistory = manager.topicHistory.slice(-5);
+      }
+
+      console.log(`Generated vocabulary batch with topic: ${selectedTopic}`);
+      return batchExercises;
+    } catch (error) {
+      console.error(
+        `Error generating vocabulary batch on attempt ${attempt + 1}:`,
+        error
+      );
+      attempt++;
+
+      if (attempt >= maxRetries) {
+        throw new Error(
+          "Failed to generate vocabulary batch after multiple attempts"
+        );
+      }
+    }
+  }
+
+  throw new Error("Failed to generate vocabulary batch");
+}
+
+export async function generateBatchGrammarExercises(
+  difficulty: string,
+  userId: string = "anonymous",
+  grammarTopic?: string
+): Promise<BatchExercises> {
+  const maxRetries = 3;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      const manager = exerciseCycleManagers.get(`grammar_${userId}`) || {
+        currentBatch: null,
+        currentIndex: 0,
+        exerciseType: "grammar" as const,
+        userId,
+        difficulty,
+        topicHistory: [],
+      };
+
+      // Select topic (either provided or random, avoiding recent ones)
+      const selectedTopic =
+        grammarTopic ||
+        selectRandomTopic(grammarTopics, manager.topicHistory.slice(-3));
+
+      // Generate variation seed for unique content
+      const variationSeed = ContentTracker.generateVariationSeed(
+        userId,
+        "grammar-batch",
+        difficulty,
+        selectedTopic
+      );
+
+      // Create a batch-optimized prompt
+      const batchPrompt = `Generate exactly 5 diverse German grammar exercises for ${difficulty} level focusing on "${selectedTopic}".
+
+Each exercise should:
+1. Test different aspects of "${selectedTopic}" (don't repeat the same grammar rule)
+2. Include 4 multiple choice options with exactly one correct answer
+3. Use different sentence contexts and vocabulary
+4. Have clear explanations that teach the grammar rule
+5. Progress from simpler to more complex examples within the topic
+
+Return as JSON with this structure:
+{
+  "batchId": "generated_batch_id", 
+  "topic": "${selectedTopic}",
+  "difficulty": "${difficulty}",
+  "exercises": [
+    {
+      "type": "grammar",
+      "difficulty": "${difficulty}",
+      "question": "Choose the correct verb form: Ich _____ gestern ins Kino gegangen.",
+      "options": ["bin", "habe", "ist", "hat"],
+      "correctAnswer": "bin",
+      "explanation": "With verbs of movement like 'gehen', we use 'sein' as auxiliary verb in perfect tense.",
+      "topic": "${selectedTopic}",
+      "germanText": "Ich bin gestern ins Kino gegangen.",
+      "englishText": "I went to the cinema yesterday."
+    }
+    // ... 4 more exercises
+  ]
+}
+
+Variation seed: ${variationSeed}`;
+
+      const temperature = 0.8 + attempt * 0.1;
+
+      const response = await openai.chat.completions.create({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: batchPrompt,
+          },
+        ],
+        temperature: Math.min(temperature, 1.0),
+        max_tokens: 3500,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "batch_grammar_exercises",
+            schema: BatchGrammarExercisesSchema,
+          },
+        },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("No content generated");
+
+      const batchExercises = processAIResponse<BatchExercises>(content, [
+        "batchId",
+        "topic",
+        "difficulty",
+        "exercises",
+      ]);
+
+      // Ensure all exercises have correct type and difficulty
+      batchExercises.exercises.forEach((exercise) => {
+        exercise.type = "grammar";
+        exercise.difficulty = difficulty as any;
+      });
+
+      // Set proper batch ID
+      batchExercises.batchId = generateBatchId();
+      batchExercises.difficulty = difficulty as any;
+
+      // Check for duplicates across the batch
+      const exerciseKeys = batchExercises.exercises.map(
+        (ex) => `${ex.question}-${ex.germanText || ""}`
+      );
+      const hasDuplicates = exerciseKeys.some(
+        (key, index) =>
+          exerciseKeys.indexOf(key) !== index || ContentTracker.isDuplicate(key)
+      );
+
+      if (hasDuplicates && attempt < maxRetries - 1) {
+        console.log(
+          `Duplicate content detected in grammar batch on attempt ${
+            attempt + 1
+          }, retrying...`
+        );
+        attempt++;
+        continue;
+      }
+
+      // Track all content to prevent future duplicates
+      exerciseKeys.forEach((key) => ContentTracker.trackContent(key));
+
+      // Update topic history
+      manager.topicHistory.push(selectedTopic);
+      if (manager.topicHistory.length > 5) {
+        manager.topicHistory = manager.topicHistory.slice(-5);
+      }
+
+      console.log(`Generated grammar batch with topic: ${selectedTopic}`);
+      return batchExercises;
+    } catch (error) {
+      console.error(
+        `Error generating grammar batch on attempt ${attempt + 1}:`,
+        error
+      );
+      attempt++;
+
+      if (attempt >= maxRetries) {
+        throw new Error(
+          "Failed to generate grammar batch after multiple attempts"
+        );
+      }
+    }
+  }
+
+  throw new Error("Failed to generate grammar batch");
+}
+
+export function initializeExerciseCycleManager(
+  exerciseType: "vocabulary" | "grammar",
+  userId: string,
+  difficulty: string
+): ExerciseCycleManager {
+  const key = `${exerciseType}_${userId}`;
+  const manager: ExerciseCycleManager = {
+    currentBatch: null,
+    currentIndex: 0,
+    exerciseType,
+    userId,
+    difficulty,
+    topicHistory: [],
+  };
+
+  exerciseCycleManagers.set(key, manager);
+  return manager;
+}
+
+export async function getNextExercise(
+  exerciseType: "vocabulary" | "grammar",
+  userId: string,
+  difficulty: string,
+  topic?: string
+): Promise<GermanExercise> {
+  const key = `${exerciseType}_${userId}`;
+  let manager = exerciseCycleManagers.get(key);
+
+  if (!manager) {
+    manager = initializeExerciseCycleManager(exerciseType, userId, difficulty);
+  }
+
+  // Check if we need a new batch (no current batch or finished current batch)
+  if (
+    !manager.currentBatch ||
+    manager.currentIndex >= manager.currentBatch.exercises.length
+  ) {
+    console.log(`Generating new ${exerciseType} batch for user ${userId}`);
+
+    if (exerciseType === "vocabulary") {
+      manager.currentBatch = await generateBatchVocabularyExercises(
+        difficulty,
+        userId,
+        topic
+      );
+    } else {
+      manager.currentBatch = await generateBatchGrammarExercises(
+        difficulty,
+        userId,
+        topic
+      );
+    }
+
+    manager.currentIndex = 0;
+    exerciseCycleManagers.set(key, manager);
+  }
+
+  // Get the current exercise
+  const exercise = manager.currentBatch.exercises[manager.currentIndex];
+
+  // Advance to next exercise for future calls
+  manager.currentIndex++;
+  exerciseCycleManagers.set(key, manager);
+
+  console.log(
+    `Serving exercise ${manager.currentIndex} of ${manager.currentBatch.exercises.length} from batch: ${manager.currentBatch.topic}`
+  );
+
+  return exercise;
+}
+
+export function getCurrentBatchInfo(
+  exerciseType: "vocabulary" | "grammar",
+  userId: string
+): { topic: string; remaining: number; total: number } | null {
+  const key = `${exerciseType}_${userId}`;
+  const manager = exerciseCycleManagers.get(key);
+
+  if (!manager || !manager.currentBatch) {
+    return null;
+  }
+
+  return {
+    topic: manager.currentBatch.topic,
+    remaining: manager.currentBatch.exercises.length - manager.currentIndex,
+    total: manager.currentBatch.exercises.length,
+  };
 }
 
 export async function generateVocabularyExercise(

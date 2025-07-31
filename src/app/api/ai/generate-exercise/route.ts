@@ -5,6 +5,8 @@ import {
   generateVocabularyExercise,
   generateGrammarExercise,
   generateTranslationExercise,
+  getNextExercise,
+  getCurrentBatchInfo,
 } from "@/lib/aiClient";
 
 const generateExerciseSchema = z.object({
@@ -21,31 +23,59 @@ const generateExerciseSchema = z.object({
   translationDirection: z
     .enum(["german-to-english", "english-to-german"])
     .optional(),
+  useBatchSystem: z.boolean().default(true), // Enable batch system by default
 });
 
 export const POST = withAuth(
   async (request: NextRequest, params: any, userId: string) => {
     try {
       const body = await request.json();
-      const { type, difficulty, topic, grammarTopic, translationDirection } =
-        generateExerciseSchema.parse(body);
+      const {
+        type,
+        difficulty,
+        topic,
+        grammarTopic,
+        translationDirection,
+        useBatchSystem,
+      } = generateExerciseSchema.parse(body);
 
       let exercise;
+      let batchInfo = null;
 
       switch (type) {
         case "vocabulary":
-          exercise = await generateVocabularyExercise(
-            difficulty,
-            topic,
-            userId
-          );
+          if (useBatchSystem) {
+            exercise = await getNextExercise(
+              "vocabulary",
+              userId,
+              difficulty,
+              topic
+            );
+            batchInfo = getCurrentBatchInfo("vocabulary", userId);
+          } else {
+            exercise = await generateVocabularyExercise(
+              difficulty,
+              topic,
+              userId
+            );
+          }
           break;
         case "grammar":
-          exercise = await generateGrammarExercise(
-            difficulty,
-            grammarTopic,
-            userId
-          );
+          if (useBatchSystem) {
+            exercise = await getNextExercise(
+              "grammar",
+              userId,
+              difficulty,
+              grammarTopic
+            );
+            batchInfo = getCurrentBatchInfo("grammar", userId);
+          } else {
+            exercise = await generateGrammarExercise(
+              difficulty,
+              grammarTopic,
+              userId
+            );
+          }
           break;
         case "translation":
           exercise = await generateTranslationExercise(
@@ -61,10 +91,17 @@ export const POST = withAuth(
           );
       }
 
-      return NextResponse.json({
+      const response: any = {
         success: true,
         exercise,
-      });
+      };
+
+      // Include batch information for batch-generated exercises
+      if (batchInfo) {
+        response.batchInfo = batchInfo;
+      }
+
+      return NextResponse.json(response);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
