@@ -30,6 +30,27 @@ export function batchGrammarPrompt(
     "daily routines",
     "weather discussions",
     "technology usage",
+    "business meetings",
+    "social gatherings",
+    "health and fitness",
+    "leisure activities",
+    "personal finance",
+    "legal matters",
+    "environmental issues",
+    "cultural exchange",
+    "sports and fitness",
+    "travel planning",
+    "food and dining",
+    "entertainment and media",
+    "technology and innovation",
+    "art and culture",
+    "science and technology",
+    "politics and government",
+    "religion and spirituality",
+    "personal relationships",
+    "workplace dynamics",
+    "school and education",
+    "community and society",
   ];
   const focuses = [
     "practical usage",
@@ -37,6 +58,11 @@ export function batchGrammarPrompt(
     "common mistakes",
     "authentic contexts",
     "real-world application",
+    "cultural context",
+    "historical background",
+    "linguistic features",
+    "regional variations",
+    "literary language",
   ];
 
   const characterTypes = [
@@ -95,8 +121,8 @@ export function batchGrammarPrompt(
   "correctAnswer": "stellte vor",
   "explanation": "The separable verb 'vorstellen' splits into 'stellte ... vor' in the simple past.",
   "topic": "Separable verbs in past tense",
-  "germanText": "Gestern stellte der Lehrer den neuen Plan vor.",
-  "englishText": "Yesterday the teacher presented the new plan."
+  "germanText": "Bevor das Meeting begann, stellte der Manager die Agenda vor.",
+  "englishText": "Before the meeting started, the manager presented the agenda."
 },
 {
   "type": "grammar",
@@ -106,19 +132,19 @@ export function batchGrammarPrompt(
   "correctAnswer": "muss sein",
   "explanation": "Fixed expression 'Das muss ein Irrtum sein' uses the modal verb 'muss' followed by 'sein'.",
   "topic": "Modal verbs in set expressions",
-  "germanText": "Das muss ein Irrtum sein.",
-  "englishText": "That must be a mistake."
+  "germanText": "Die Rechnung ist falsch, das muss ein Irrtum sein!",
+  "englishText": "The bill is wrong, that must be a mistake!"
 },
 {
   "type": "grammar",
   "difficulty": "B2",
   "question": "Wir __BLANK__ Ihnen dankbar, wenn Sie uns die Unterlagen bis Freitag zusenden könnten.",
-  "options": ["wären", "würden wir", "waren", "sollen wir"],
+  "options": ["würden wir", "waren", "sollen wir", "wären"],
   "correctAnswer": "wären",
   "explanation": "In formal requests the Konjunktiv II of 'sein' (wären) expresses politeness: 'Wir wären Ihnen dankbar …'.",
   "topic": "Konjunktiv II in polite requests",
-  "germanText": "Wir wären Ihnen sehr dankbar, wenn Sie uns informieren könnten.",
-  "englishText": "We would be very grateful if you could inform us."
+  "germanText": "Wir wären Ihnen dankbar, wenn Sie uns die Unterlagen bis Freitag zusenden könnten.",
+  "englishText": "We would be grateful if you could send us the documents by Friday."
 }
 
 ================ TASK =================================================================
@@ -147,7 +173,7 @@ Each exercise MUST satisfy ALL of the following:
 
 ================ OUTPUT FORMAT ======================================================
 Return ONE valid JSON object and NOTHING else.
-
+Example:
 {
   "batchId": "auto-generated-uuid",
   "topic": "${topic}",
@@ -164,7 +190,7 @@ Return ONE valid JSON object and NOTHING else.
       "germanText": "A German sentence or short text providing context.",
       "englishText": "The English translation of the German text."
     }
-    // ... exactly 4 more exercise objects
+    // ... exactly 9 more exercise objects
   ]
 }`;
 }

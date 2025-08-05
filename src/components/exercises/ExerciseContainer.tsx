@@ -1,15 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-
-interface ExerciseOption {
-  id: string;
-  text: string;
-}
+import { ExerciseResult, ExerciseSummary } from "./ExerciseSummary";
 
 interface ExerciseContainerProps {
   title: string;
@@ -20,11 +16,23 @@ interface ExerciseContainerProps {
   type: string;
   difficulty: string;
   topic?: string;
-  onComplete: (isCorrect: boolean, timeSpent: number) => void;
+  onComplete: (
+    isCorrect: boolean,
+    timeSpent: number,
+    userAnswer?: string
+  ) => void;
   onNextExercise: () => void;
   germanText?: string;
   englishText?: string;
   isLoadingNext?: boolean;
+  showSummary?: boolean;
+  exerciseResults?: ExerciseResult[];
+  totalXp?: number;
+  correctCount?: number;
+  totalCount?: number;
+  averageTime?: number;
+  onContinue?: () => void;
+  isDailyChallenge?: boolean;
 }
 
 export function ExerciseContainer({
@@ -41,11 +49,31 @@ export function ExerciseContainer({
   germanText,
   englishText,
   isLoadingNext = false,
+  showSummary = false,
+  exerciseResults = [],
+  totalXp = 0,
+  correctCount = 0,
+  totalCount = 0,
+  averageTime = 0,
+  onContinue,
+  isDailyChallenge = false,
 }: ExerciseContainerProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [isAnswered, setIsAnswered] = useState(false);
   const [startTime] = useState(Date.now());
   const { addToast } = useToast();
+
+  // Shuffle options using Fisher-Yates algorithm
+  const shuffledOptions = useMemo(() => {
+    if (!options || options.length === 0) return [];
+
+    const shuffled = [...options];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [options]);
 
   const handleSubmit = () => {
     if (!selectedAnswer) {
@@ -62,7 +90,7 @@ export function ExerciseContainer({
     const isCorrect = selectedAnswer === correctAnswer;
 
     setIsAnswered(true);
-    onComplete(isCorrect, timeSpent);
+    onComplete(isCorrect, timeSpent, selectedAnswer);
 
     addToast({
       type: isCorrect ? "success" : "error",
@@ -100,6 +128,21 @@ export function ExerciseContainer({
   const getDifficultyText = (diff: string) => {
     return diff.replace("_", " ");
   };
+
+  // Show summary if requested
+  if (showSummary) {
+    return (
+      <ExerciseSummary
+        results={exerciseResults}
+        totalXp={totalXp}
+        correctCount={correctCount}
+        totalCount={totalCount}
+        averageTime={averageTime}
+        onContinue={onContinue || onNextExercise}
+        isDailyChallenge={isDailyChallenge}
+      />
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 relative">
@@ -211,7 +254,7 @@ export function ExerciseContainer({
 
               {/* Answer Options */}
               <div className="space-y-3">
-                {options.map((option, index) => (
+                {shuffledOptions.map((option, index) => (
                   <button
                     key={index}
                     onClick={() => !isAnswered && setSelectedAnswer(option)}

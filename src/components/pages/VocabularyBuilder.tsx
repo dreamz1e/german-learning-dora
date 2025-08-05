@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ExerciseContainer } from "@/components/exercises/ExerciseContainer";
 import { useToast } from "@/components/ui/Toast";
+import { ExerciseResult } from "@/components/exercises/ExerciseSummary";
 
 interface VocabularyWord {
   german: string;
@@ -56,6 +57,15 @@ export function VocabularyBuilder({
     total: number;
   } | null>(null);
   const [isGeneratingNewBatch, setIsGeneratingNewBatch] = useState(false);
+  const [exerciseResults, setExerciseResults] = useState<ExerciseResult[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryStats, setSummaryStats] = useState({
+    totalXp: 0,
+    correctCount: 0,
+    totalCount: 0,
+    averageTime: 0,
+  });
+  const [exerciseKey, setExerciseKey] = useState(0);
 
   const vocabularyCategories = [
     "Daily Life",
@@ -175,6 +185,15 @@ export function VocabularyBuilder({
     // Clear current exercise and batch info immediately
     setCurrentExercise(null);
     setBatchInfo(null);
+    setExerciseResults([]);
+    setShowSummary(false);
+    setSummaryStats({
+      totalXp: 0,
+      correctCount: 0,
+      totalCount: 0,
+      averageTime: 0,
+    });
+    setExerciseKey((prev) => prev + 1);
 
     try {
       console.log("Starting new batch generation for vocabulary...");
@@ -230,9 +249,10 @@ export function VocabularyBuilder({
 
   const handleExerciseComplete = async (
     isCorrect: boolean,
-    timeSpent: number
+    timeSpent: number,
+    userAnswer?: string
   ) => {
-    if (!user) return;
+    if (!user || !currentExercise) return;
 
     try {
       const baseXpAmount = isCorrect ? 20 : 8;
@@ -253,14 +273,60 @@ export function VocabularyBuilder({
         }),
       });
 
-      addToast({
-        type: "success",
-        title: "Exercise Complete!",
-        message: `You earned ${xpAmount} XP! ${
-          isCorrect ? "Perfect!" : "Keep learning!"
-        }`,
-        duration: 4000,
-      });
+      // Track exercise result
+      const result: ExerciseResult = {
+        isCorrect,
+        timeSpent,
+        xpEarned: xpAmount,
+        question: currentExercise.question,
+        correctAnswer: currentExercise.correctAnswer,
+        userAnswer: userAnswer || "",
+        topic: currentExercise.topic,
+        difficulty: currentExercise.difficulty,
+      };
+
+      const newResults = [...exerciseResults, result];
+      setExerciseResults(newResults);
+
+      // Check if batch is complete using batch info or fallback to 10 exercises
+      const isBatchComplete =
+        (batchInfo && newResults.length >= batchInfo.total) ||
+        newResults.length >= 10 ||
+        isDailyChallenge;
+
+      if (isBatchComplete) {
+        // Calculate summary statistics
+        const totalXp = newResults.reduce((sum, r) => sum + r.xpEarned, 0);
+        const correctCount = newResults.filter((r) => r.isCorrect).length;
+        const totalCount = newResults.length;
+        const averageTime =
+          newResults.reduce((sum, r) => sum + r.timeSpent, 0) / totalCount;
+
+        setSummaryStats({
+          totalXp,
+          correctCount,
+          totalCount,
+          averageTime,
+        });
+
+        setShowSummary(true);
+
+        addToast({
+          type: "success",
+          title: "Batch Complete! 🎉",
+          message: `You completed ${totalCount} exercises and earned ${totalXp} XP!`,
+          duration: 5000,
+        });
+      } else {
+        addToast({
+          type: "success",
+          title: "Exercise Complete!",
+          message: `You earned ${xpAmount} XP! ${
+            isCorrect ? "Perfect!" : "Keep learning!"
+          }`,
+          duration: 4000,
+        });
+      }
 
       // Handle daily challenge completion
       if (isDailyChallenge) {
@@ -324,6 +390,21 @@ export function VocabularyBuilder({
     } catch (error) {
       console.error("Error awarding XP:", error);
     }
+  };
+
+  const handleContinueAfterSummary = () => {
+    setShowSummary(false);
+    setExerciseResults([]);
+    setSummaryStats({
+      totalXp: 0,
+      correctCount: 0,
+      totalCount: 0,
+      averageTime: 0,
+    });
+    setExerciseKey((prev) => prev + 1);
+    // Reset batch info to ensure fresh start
+    setBatchInfo(null);
+    generateExercise();
   };
 
   if (!user) return null;
@@ -587,6 +668,7 @@ export function VocabularyBuilder({
           </div>
 
           <ExerciseContainer
+            key={exerciseKey}
             title="Vocabulary Practice"
             question={currentExercise.question}
             options={currentExercise.options}
@@ -600,6 +682,14 @@ export function VocabularyBuilder({
             onComplete={handleExerciseComplete}
             onNextExercise={generateExercise}
             isLoadingNext={isLoading}
+            showSummary={showSummary}
+            exerciseResults={exerciseResults}
+            totalXp={summaryStats.totalXp}
+            correctCount={summaryStats.correctCount}
+            totalCount={summaryStats.totalCount}
+            averageTime={summaryStats.averageTime}
+            onContinue={handleContinueAfterSummary}
+            isDailyChallenge={isDailyChallenge}
           />
         </div>
       )}

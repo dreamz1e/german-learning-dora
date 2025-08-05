@@ -25,6 +25,19 @@ export function batchVocabularyPrompt(
     "culture",
     "technology",
     "environment",
+    "food",
+    "travel",
+    "health",
+    "culture",
+    "technology",
+    "environment",
+    "business",
+    "sports",
+    "music",
+    "art",
+    "science",
+    "politics",
+    "religion",
   ];
   const styleVariants = [
     "conversational",
@@ -32,6 +45,11 @@ export function batchVocabularyPrompt(
     "practical",
     "descriptive",
     "instructional",
+    "educational",
+    "scientific",
+    "political",
+    "cultural",
+    "environmental",
   ];
 
   const context = contextVariants[seedNum % contextVariants.length];
@@ -58,12 +76,12 @@ export function batchVocabularyPrompt(
   "type": "vocabulary",
   "difficulty": "A2",
   "question": "What is the English translation of 'das Gericht'?",
-  "options": ["dish", "court", "right", "story"],
+  "options": ["court", "right", "story", "dish"],
   "correctAnswer": "dish",
-  "explanation": "'Gericht' in culinary contexts means a prepared dish. It can also mean court of law in other contexts, which serves as a plausible distractor.",
+  "explanation": "'Gericht' in culinary contexts means a prepared dish",
   "topic": "Food",
-  "germanText": "Dieses Gericht schmeckt besonders gut mit frischen Kräutern.",
-  "englishText": "This dish tastes especially good with fresh herbs."
+  "germanText": "Das Gericht schmeckt besonders gut mit frischen Kräutern.",
+  "englishText": "The dish tastes especially good with fresh herbs."
 }
 
 ================ TASK =================================================================
@@ -89,6 +107,7 @@ Exercise Requirements:
 
 ================ OUTPUT FORMAT ======================================================
 Return ONE valid JSON object and NOTHING else.
+Example:
 
 {
   "batchId": "auto-generated-uuid",
