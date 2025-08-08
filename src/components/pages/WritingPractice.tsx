@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { WritingExercise } from "@/components/exercises/WritingExercise";
 import { useToast } from "@/components/ui/Toast";
+import { useRouter } from "next/navigation";
 
 interface BilingualGuideline {
   de: string;
@@ -30,6 +31,7 @@ interface WritingPracticeProps {
 export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const router = useRouter();
   const [currentPrompt, setCurrentPrompt] = useState<WritingPrompt | null>(
     null
   );
@@ -251,7 +253,15 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
               </div>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                className="min-w-40"
+                onClick={() => router.push("/writing/history")}
+              >
+                View History
+              </Button>
               <Button
                 onClick={generatePrompt}
                 disabled={isLoading}
@@ -279,9 +289,18 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
             <Badge variant="outline" className="text-sm">
               AI-Generated Writing Prompt
             </Badge>
-            <Button variant="outline" onClick={() => setCurrentPrompt(null)}>
-              Generate New Prompt
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/writing/history")}
+              >
+                View History
+              </Button>
+              <Button variant="outline" onClick={() => setCurrentPrompt(null)}>
+                Generate New Prompt
+              </Button>
+            </div>
           </div>
 
           <WritingExercise

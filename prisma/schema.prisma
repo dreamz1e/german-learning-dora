@@ -29,6 +29,7 @@ model User {
   achievements    UserAchievement[]
   dailyStreak     DailyStreak?
   dailyChallengeCompletions UserDailyChallengeCompletion[]
+  writingSubmissions WritingSubmission[]
 
   @@map("users")
 }
@@ -205,4 +206,27 @@ enum DifficultyLevel {
   B1_BASIC
   B1_INTERMEDIATE
   B1_ADVANCED
+}
+
+// Writing practice submissions and evaluations
+model WritingSubmission {
+  id         String          @id @default(cuid())
+  userId     String
+  createdAt  DateTime        @default(now())
+
+  // Prompt/task context
+  difficulty DifficultyLevel
+  topic      String?
+  promptText String          // Combined DE/EN or any text shown to the user
+
+  // User writing
+  userText   String
+  wordCount  Int
+
+  // Full evaluation payload as JSON (contains scores, errors, correctedText, etc.)
+  evaluation Json
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("writing_submissions")
 }

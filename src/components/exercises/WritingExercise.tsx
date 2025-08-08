@@ -154,6 +154,7 @@ export function WritingExercise({
           text: text.trim(),
           difficulty: prompt.difficulty,
           originalPrompt: `DE: ${prompt.promptDe}\nEN: ${prompt.promptEn}`,
+          topic: prompt.topic,
         }),
       });
 
