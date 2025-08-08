@@ -5,11 +5,11 @@ import prisma from "@/lib/db";
 export const GET = withAuth(
   async (
     _req: NextRequest,
-    ctx: { params: { id: string } },
+    ctx: { params: Promise<{ id: string }> },
     userId: string
   ) => {
     try {
-      const id = ctx.params.id;
+      const { id } = await ctx.params;
       const submission = await (prisma as any).writingSubmission.findFirst({
         where: { id, userId },
         select: {
