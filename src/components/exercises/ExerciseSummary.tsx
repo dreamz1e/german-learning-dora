@@ -62,6 +62,11 @@ export function ExerciseSummary({
                 🎯 Daily Challenge Complete!
               </Badge>
             )}
+            {isDailyChallenge && (
+              <div className="text-sm text-muted-foreground">
+                Returning to Daily Challenges…
+              </div>
+            )}
           </div>
         </CardHeader>
       </Card>

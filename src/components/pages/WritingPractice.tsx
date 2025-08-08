@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -39,6 +39,28 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
   const [difficulty, setDifficulty] = useState("A2_BASIC");
   const [topic, setTopic] = useState("");
   const [exerciseType, setExerciseType] = useState("guided");
+  const [isDailyChallenge, setIsDailyChallenge] = useState(false);
+  // Daily Challenge auto-start
+  useEffect(() => {
+    const activeDailyChallenge = localStorage.getItem("activeDailyChallenge");
+    if (activeDailyChallenge) {
+      const challenge = JSON.parse(activeDailyChallenge);
+      if (challenge.taskType === "writing") {
+        setIsDailyChallenge(true);
+        setDifficulty(
+          challenge.difficulty === "Easy"
+            ? "A2_BASIC"
+            : challenge.difficulty === "Medium"
+            ? "B1_BASIC"
+            : "B1_ADVANCED"
+        );
+        if (challenge.content?.prompt) {
+          setTopic(challenge.content.prompt);
+        }
+        generatePrompt();
+      }
+    }
+  }, []);
 
   const topics = [
     "Daily Life",
@@ -134,17 +156,48 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: finalXP,
-          reason: `Writing practice (score-based): ${currentPrompt.topic}`,
-          category: "EXERCISE",
+          reason: isDailyChallenge
+            ? "Completed daily challenge writing task"
+            : `Writing practice (score-based): ${currentPrompt.topic}`,
+          category: isDailyChallenge ? "DAILY_CHALLENGE" : "EXERCISE",
         }),
       });
 
-      addToast({
-        type: "success",
-        title: "Writing Complete!",
-        message: `You earned ${finalXP} XP! Overall score: ${evaluationScore}/100`,
-        duration: 5000,
-      });
+      if (isDailyChallenge) {
+        const activeDailyChallenge = localStorage.getItem(
+          "activeDailyChallenge"
+        );
+        if (activeDailyChallenge) {
+          const challenge = JSON.parse(activeDailyChallenge);
+          localStorage.setItem(
+            "completedDailyChallenge",
+            JSON.stringify({
+              taskId: challenge.taskId,
+              taskType: challenge.taskType,
+              completed: true,
+              timeSpent,
+              isCorrect: (evaluationScore || 0) >= 60,
+              xpEarned: finalXP,
+            })
+          );
+        }
+
+        addToast({
+          type: "success",
+          title: "Daily Challenge Complete! 🎉",
+          message: "Returning to Daily Challenges...",
+          duration: 3000,
+        });
+
+        setTimeout(() => onNavigate?.("daily-challenge"), 2000);
+      } else {
+        addToast({
+          type: "success",
+          title: "Writing Complete!",
+          message: `You earned ${finalXP} XP! Overall score: ${evaluationScore}/100`,
+          duration: 5000,
+        });
+      }
     } catch (error) {
       console.error("Error awarding XP:", error);
     }
@@ -158,7 +211,9 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Writing Practice</h1>
         <p className="text-muted-foreground text-lg">
-          Develop your German writing skills with AI-generated prompts
+          {isDailyChallenge
+            ? "Complete this writing exercise to finish your daily challenge!"
+            : "Develop your German writing skills with AI-generated prompts"}
         </p>
       </div>
 

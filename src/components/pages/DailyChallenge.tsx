@@ -36,6 +36,7 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [completionsLoading, setCompletionsLoading] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   if (!user) return null;
 
@@ -95,20 +96,23 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
 
     const tasks: DailyTask[] = selectedTypes.map((taskType, index) => {
       const redirectTo = getRedirectPage(taskType.type);
-      console.log(
-        `Generating task ${taskType.type} -> redirectTo: ${redirectTo}`
+      const meaningful = getMeaningfulTaskDetails(
+        taskType.type,
+        taskType.difficulty,
+        userLevel
       );
 
       return {
         id: `daily-${taskType.type}-${Date.now()}-${index}`,
         title: taskType.title,
-        description: `AI-generated ${taskType.type} exercise tailored to your level`,
+        description: meaningful.description,
         icon: taskType.icon,
         xp: taskType.baseXP + userLevel * 2, // Scale XP with level
         difficulty: taskType.difficulty,
         estimatedTime: getEstimatedTime(taskType.type, taskType.difficulty),
         type: taskType.type,
         aiGenerated: true,
+        content: meaningful.content,
         completed: false,
         redirectTo: redirectTo,
       };
@@ -150,6 +154,100 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
       sentence_construction: "advanced", // Sentence construction is in advanced exercises
     };
     return pageMapping[type] || "dashboard";
+  };
+
+  // More meaningful, motivational micro-goals per task type
+  const getMeaningfulTaskDetails = (
+    type: string,
+    difficulty: string,
+    level: number
+  ): { description: string; content?: any } => {
+    const levelTag = level <= 3 ? "A2" : "B1";
+
+    if (type === "vocabulary") {
+      const themes = [
+        "Reisen (Travel)",
+        "Essen & Trinken (Food)",
+        "Arbeit & Büro (Work)",
+        "Gefühle (Emotions)",
+        "Einkaufen (Shopping)",
+      ];
+      const theme = themes[Math.floor(Math.random() * themes.length)];
+      const targetWords = level <= 3 ? 8 : 12;
+      return {
+        description: `Learn ${targetWords} ${levelTag}-level words on “${theme}” with examples, then a quick recall test.`,
+        content: { theme, targetWords, mode: "spaced_recall" },
+      };
+    }
+
+    if (type === "grammar") {
+      const topics = [
+        "Trennbare Verben (separable verbs)",
+        "Akkusativ vs. Dativ",
+        "Wortstellung: Zeit – Art – Ort",
+        "Modalverben im Präsens",
+        "Komparativ & Superlativ",
+        "Präteritum vs. Perfekt (Alltag)",
+      ];
+      const topic = topics[Math.floor(Math.random() * topics.length)];
+      return {
+        description: `Master ${topic} with 5 targeted examples and instant feedback. Focus: ${difficulty}.`,
+        content: { topic, examples: 5 },
+      };
+    }
+
+    if (type === "reading") {
+      const themes = [
+        "Alltag in Deutschland",
+        "Kultur & Traditionen",
+        "Gesundheit & Fitness",
+        "Arbeit & Studium",
+        "Umwelt & Nachhaltigkeit",
+      ];
+      const theme = themes[Math.floor(Math.random() * themes.length)];
+      const words = level <= 3 ? 150 : 220;
+      return {
+        description: `Read a ${words}-word text about “${theme}” and answer 3 comprehension questions.`,
+        content: { theme, targetWords: words, questions: 3 },
+      };
+    }
+
+    if (type === "writing") {
+      const prompts = [
+        "Beschreibe deinen Tagesablauf (Describe your daily routine)",
+        "Erzähle von einer Reise (Tell about a trip)",
+        "Schreibe eine kurze E-Mail (Write a short email)",
+        "Was motiviert dich beim Deutschlernen?",
+        "Plane ein Wochenende in Berlin",
+      ];
+      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+      const minWords = level <= 3 ? 60 : 100;
+      return {
+        description: `Write ${minWords}-${
+          minWords + 40
+        } words: ${prompt}. Get AI feedback on grammar, vocab and structure.`,
+        content: { prompt, minWords, maxWords: minWords + 40 },
+      };
+    }
+
+    if (type === "sentence_construction") {
+      const focuses = [
+        "Position von ‘nicht’",
+        "Fragesätze ohne Fragewort",
+        "Verbzweitstellung",
+        "Nebensätze mit ‘weil’",
+        "Trennbare Verben – richtige Reihenfolge",
+      ];
+      const focus = focuses[Math.floor(Math.random() * focuses.length)];
+      return {
+        description: `Build 5 sentences focusing on: ${focus}. Unlock the solution after each attempt.`,
+        content: { focus, items: 5 },
+      };
+    }
+
+    return {
+      description: `AI-generated ${type} exercise tailored to your level`,
+    };
   };
 
   // Fetch user's daily challenge completions for today
@@ -325,6 +423,13 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
     checkCompletedChallenge();
   }, []);
 
+  // Auto-hide confetti after a short celebration
+  useEffect(() => {
+    if (!showConfetti) return;
+    const timer = setTimeout(() => setShowConfetti(false), 4500);
+    return () => clearTimeout(timer);
+  }, [showConfetti]);
+
   const handleStartTask = async (task: DailyTask) => {
     if (completedTasks.includes(task.id)) {
       addToast({
@@ -345,6 +450,7 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
         taskTitle: task.title,
         xp: task.xp,
         difficulty: task.difficulty,
+        content: task.content || null,
         startTime: Date.now(),
       })
     );
@@ -475,6 +581,9 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
               duration: 8000,
             });
 
+            // Trigger celebration confetti
+            setShowConfetti(true);
+
             // Show achievement notifications
             if (
               streakData.newAchievements &&
@@ -511,7 +620,7 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
 
   if (isLoading || completionsLoading) {
     return (
-      <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-0 flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="text-gray-600">
@@ -529,33 +638,91 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
   const allTasksCompleted = completedTasks.length === dailyTasks.length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center space-x-2">
-          <span className="text-4xl">🎯</span>
-          <h1 className="text-3xl font-bold text-gray-900">Daily Challenge</h1>
+    <div className="max-w-4xl mx-auto px-4 sm:px-0 space-y-6">
+      {showConfetti && (
+        <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+          {Array.from({ length: 100 }).map((_, i) => {
+            const left = Math.random() * 100;
+            const size = Math.floor(Math.random() * 8) + 6; // 6-14px
+            const duration = 2.5 + Math.random(); // 2.5-3.5s
+            const delay = Math.random() * 0.7; // 0-0.7s
+            const rotate = Math.floor(Math.random() * 360);
+            const colors = [
+              "#F43F5E",
+              "#F97316",
+              "#F59E0B",
+              "#10B981",
+              "#3B82F6",
+              "#8B5CF6",
+              "#EC4899",
+            ];
+            const color = colors[i % colors.length];
+            return (
+              <span
+                key={i}
+                className="absolute -top-10 rounded-[1px] opacity-90"
+                style={{
+                  left: `${left}%`,
+                  width: `${size}px`,
+                  height: `${Math.max(3, Math.floor(size * 0.4))}px`,
+                  backgroundColor: color,
+                  transform: `rotate(${rotate}deg)`,
+                  animation: `confetti-fall ${duration}s ease-out ${delay}s forwards`,
+                }}
+              />
+            );
+          })}
+          <style jsx>{`
+            @keyframes confetti-fall {
+              0% {
+                transform: translate3d(0, -80px, 0) rotate(0deg);
+                opacity: 1;
+              }
+              100% {
+                transform: translate3d(0, 110vh, 0) rotate(720deg);
+                opacity: 0;
+              }
+            }
+          `}</style>
         </div>
-        <p className="text-gray-600 text-lg">
-          Complete AI-generated tasks tailored to your learning level
-        </p>
-        {allTasksCompleted && (
-          <div className="bg-green-100 border border-green-300 rounded-lg p-4">
-            <p className="text-green-800 font-semibold">
-              🎉 Congratulations! You've completed all daily challenges!
+      )}
+      {/* Hero Header */}
+      <Card className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-rose-50 to-white border-pink-200 ring-1 ring-pink-200/60">
+        <div className="absolute -top-24 -right-20 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-rose-400/20 blur-3xl" />
+        <CardContent className="relative p-6 md:p-8">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground bg-background/60">
+              <span>🎯 Daily Challenge</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Learn smart. Keep the streak alive.
+            </h1>
+            <p className="text-muted-foreground max-w-2xl">
+              Complete AI-generated tasks tailored to your level. Small wins,
+              every day.
             </p>
+            {allTasksCompleted && (
+              <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                <p className="text-green-700 font-semibold">
+                  🎉 All challenges completed! Come back tomorrow for new tasks.
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Progress Overview */}
       <Card className="relative overflow-hidden bg-card/80 supports-[backdrop-filter]:bg-card/60 backdrop-blur-xl ring-1 ring-border">
         <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400" />
         <CardContent className="p-6">
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-bold">Today's Progress</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  Today's Progress
+                </h2>
                 <p className="text-muted-foreground">
                   Level {userLevel} •{" "}
                   {new Date().toLocaleDateString("en-US", {
@@ -566,7 +733,7 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-foreground">
+                <div className="text-2xl sm:text-3xl font-bold text-foreground">
                   {completedTasks.length}/{dailyTasks.length}
                 </div>
                 <div className="text-muted-foreground text-sm">
@@ -583,9 +750,9 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
               <Progress value={challengeProgress} className="h-4" />
             </div>
 
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               <div className="rounded-lg p-3 ring-1 ring-border bg-card">
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-xl sm:text-2xl font-bold text-foreground">
                   {currentStreak}
                 </div>
                 <div className="text-muted-foreground text-sm">
@@ -593,7 +760,7 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                 </div>
               </div>
               <div className="rounded-lg p-3 ring-1 ring-border bg-card">
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-xl sm:text-2xl font-bold text-foreground">
                   {totalXP}
                 </div>
                 <div className="text-muted-foreground text-sm">
@@ -601,7 +768,7 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                 </div>
               </div>
               <div className="rounded-lg p-3 ring-1 ring-border bg-card">
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-xl sm:text-2xl font-bold text-foreground">
                   +{bonusXP}
                 </div>
                 <div className="text-muted-foreground text-sm">🎁 Bonus XP</div>
@@ -652,10 +819,12 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                 }`}
               >
                 <CardContent className="p-6">
-                  <div className="flex items-center space-x-5">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                     <div className="relative">
                       <div
-                        className={`text-5xl ${isCompleted ? "grayscale" : ""}`}
+                        className={`text-4xl sm:text-5xl ${
+                          isCompleted ? "grayscale" : ""
+                        }`}
                       >
                         {task.icon}
                       </div>
@@ -671,8 +840,8 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                       )}
                     </div>
 
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
+                    <div className="flex-1 w-full">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
                         <h3 className="text-xl font-bold text-gray-900">
                           {task.title}
                         </h3>
@@ -708,20 +877,20 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                       <p className="text-gray-600 mb-4 text-base leading-relaxed">
                         {task.description}
                       </p>
-                      <div className="flex items-center space-x-6 text-sm">
-                        <div className="flex items-center space-x-1">
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                        <div className="flex items-center gap-1">
                           <span className="text-yellow-500">⭐</span>
                           <span className="font-semibold text-gray-700">
                             {task.xp} XP
                           </span>
                         </div>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center gap-1">
                           <span className="text-pink-500">⏱️</span>
                           <span className="text-gray-600">
                             {task.estimatedTime}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center gap-1">
                           <span className="text-purple-500">📚</span>
                           <span className="text-gray-600 capitalize">
                             {task.type.replace("_", " ")}
@@ -730,22 +899,27 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end space-y-3">
+                    <div className="flex flex-col sm:items-end gap-3 w-full sm:w-auto">
                       {isCompleted ? (
-                        <div className="flex items-center space-x-2 text-green-600 bg-green-100 px-4 py-2 rounded-lg">
+                        <div className="flex items-center gap-2 text-green-600 bg-green-100 px-4 py-2 rounded-lg">
                           <span className="text-2xl">🎉</span>
                           <span className="font-bold">Complete!</span>
                         </div>
                       ) : isActive ? (
-                        <div className="flex items-center space-x-2 text-pink-600 bg-pink-100 px-4 py-2 rounded-lg">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600"></div>
-                          <span className="font-medium">In Progress...</span>
-                        </div>
+                        <Button
+                          onClick={() => handleStartTask(task)}
+                          size="lg"
+                          className="w-full sm:w-auto bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                          aria-label={`Resume ${task.title}`}
+                        >
+                          Resume
+                        </Button>
                       ) : (
                         <Button
                           onClick={() => handleStartTask(task)}
                           size="lg"
-                          className="min-w-[140px] bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                          className="w-full sm:w-auto bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                          aria-label={`Start ${task.title}`}
                         >
                           Start Challenge
                         </Button>
@@ -768,7 +942,7 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-6 text-sm text-indigo-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-indigo-700">
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <span className="text-xl">🎯</span>

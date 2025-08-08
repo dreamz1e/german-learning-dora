@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -48,6 +48,29 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
   const [difficulty, setDifficulty] = useState("A2_BASIC");
   const [grammarFocus, setGrammarFocus] = useState("");
   const [isGeneratingNewExercise, setIsGeneratingNewExercise] = useState(false);
+  const [isDailyChallenge, setIsDailyChallenge] = useState(false);
+  // Daily Challenge auto-start for sentence construction
+  useEffect(() => {
+    const activeDailyChallenge = localStorage.getItem("activeDailyChallenge");
+    if (activeDailyChallenge) {
+      const challenge = JSON.parse(activeDailyChallenge);
+      if (challenge.taskType === "sentence_construction") {
+        setIsDailyChallenge(true);
+        setExerciseType("sentence");
+        setDifficulty(
+          challenge.difficulty === "Easy"
+            ? "A2_BASIC"
+            : challenge.difficulty === "Medium"
+            ? "B1_BASIC"
+            : "B1_ADVANCED"
+        );
+        if (challenge.content?.focus) {
+          setGrammarFocus(challenge.content.focus);
+        }
+        generateExercise();
+      }
+    }
+  }, []);
 
   const grammarFocusOptions = [
     "Word Order",
@@ -155,12 +178,14 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: xpAmount,
-          reason: `Advanced exercise: ${
-            exerciseType === "sentence"
-              ? "Sentence Construction"
-              : "Error Correction"
-          }`,
-          category: "EXERCISE",
+          reason: isDailyChallenge
+            ? "Completed daily challenge sentence construction"
+            : `Advanced exercise: ${
+                exerciseType === "sentence"
+                  ? "Sentence Construction"
+                  : "Error Correction"
+              }`,
+          category: isDailyChallenge ? "DAILY_CHALLENGE" : "EXERCISE",
         }),
       });
 
@@ -171,12 +196,44 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
             }`
           : `You earned ${xpAmount} XP! Score: ${isCorrectOrScore}%`;
 
-      addToast({
-        type: "success",
-        title: "Exercise Complete!",
-        message,
-        duration: 4000,
-      });
+      if (isDailyChallenge) {
+        const activeDailyChallenge = localStorage.getItem(
+          "activeDailyChallenge"
+        );
+        if (activeDailyChallenge) {
+          const challenge = JSON.parse(activeDailyChallenge);
+          localStorage.setItem(
+            "completedDailyChallenge",
+            JSON.stringify({
+              taskId: challenge.taskId,
+              taskType: challenge.taskType,
+              completed: true,
+              timeSpent,
+              isCorrect:
+                exerciseType === "sentence"
+                  ? !!isCorrectOrScore
+                  : (isCorrectOrScore as number) >= 70,
+              xpEarned: xpAmount,
+            })
+          );
+        }
+
+        addToast({
+          type: "success",
+          title: "Daily Challenge Complete! 🎉",
+          message: "Returning to Daily Challenges...",
+          duration: 3000,
+        });
+
+        setTimeout(() => onNavigate?.("daily-challenge"), 2000);
+      } else {
+        addToast({
+          type: "success",
+          title: "Exercise Complete!",
+          message,
+          duration: 4000,
+        });
+      }
     } catch (error) {
       console.error("Error awarding XP:", error);
     }

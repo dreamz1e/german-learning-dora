@@ -29,6 +29,15 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
   const xpProgress = totalXP - xpForCurrentLevel;
   const xpNeeded = xpForNextLevel - xpForCurrentLevel;
 
+  // Banner helpers
+  const tasksPlanned = currentLevel <= 2 ? 3 : 4;
+  const bannerBonusXP = Math.max(50, currentStreak * 5);
+  const levelTag = currentLevel <= 3 ? "A2" : "B1";
+  const targetWords = currentLevel <= 3 ? 8 : 12;
+  const readingWords = currentLevel <= 3 ? 150 : 220;
+  const writingMinWords = currentLevel <= 3 ? 60 : 100;
+  const writingMaxWords = writingMinWords + 40;
+
   const learningActivities = [
     {
       id: "grammar",
@@ -257,33 +266,76 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
 
       {/* Daily Challenge Highlight */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-pink-50 via-rose-50 to-white border-pink-200 ring-1 ring-pink-200/60">
-        <div className="absolute -top-12 -right-10 h-40 w-40 rounded-full bg-primary/20 blur-2xl" />
-        <CardHeader>
+        <div className="absolute -top-16 -right-10 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-16 h-44 w-44 rounded-full bg-rose-400/20 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400" />
+        <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-pink-700">
             <Target className="h-5 w-5" />
             <span>Today's Challenge</span>
-            <Badge variant="success">+50 XP Bonus</Badge>
+            <Badge variant="success">+{bannerBonusXP} XP Bonus</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <p className="text-pink-700/90">
-              Complete your daily German learning challenge to maintain your
-              streak and make you Chrisy proud! :D
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-pink-700/90">
+                Complete {tasksPlanned} focused tasks tailored to your{" "}
+                {levelTag}
+                -level. Keep the streak alive and earn extra XP.
+              </p>
+              <div className="hidden sm:flex items-center gap-2 text-xs text-pink-700/80">
+                <Badge variant="outline">Level {currentLevel}</Badge>
+                <Badge variant={currentStreak > 0 ? "success" : "secondary"}>
+                  🔥{" "}
+                  {currentStreak > 0
+                    ? `${currentStreak}-day streak`
+                    : "Start your streak"}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-pink-800">
+              <div className="flex items-start gap-2">
+                <span className="text-lg">📚</span>
+                <span>
+                  Vocabulary sprint: Learn {targetWords} {levelTag}-level words
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-lg">📝</span>
+                <span>Grammar focus: 5 targeted examples</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-lg">📖</span>
+                <span>Reading: {readingWords}-word short text</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-lg">✍️</span>
+                <span>
+                  Writing: {writingMinWords}–{writingMaxWords} words
+                </span>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button size="lg" className="flex-1 sm:flex-none">
-                Start Daily Challenge
+              <Button
+                size="lg"
+                className="flex-1 sm:flex-none bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-lg hover:shadow-xl"
+                onClick={() => onNavigate?.("daily-challenge")}
+                aria-label="Open Daily Challenge"
+              >
+                Open Daily Challenge
               </Button>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                  <Clock className="h-4 w-4" /> ~20 minutes
+                  <Clock className="h-4 w-4" /> ~20–30 min
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Target className="h-4 w-4" /> Mixed difficulty
+                  <Target className="h-4 w-4" /> {levelTag} difficulty
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Trophy className="h-4 w-4" /> Streak bonus
+                  <Trophy className="h-4 w-4" /> +{bannerBonusXP} XP
                 </span>
               </div>
             </div>

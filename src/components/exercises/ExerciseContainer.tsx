@@ -260,10 +260,22 @@ export function ExerciseContainer({
           </div>
         )}
         {/* Exercise Header */}
-        <Card>
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400" />
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-4">
-              <CardTitle className="text-xl">{title}</CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-xl">{title}</CardTitle>
+                {isDailyChallenge && (
+                  <Badge
+                    variant="success"
+                    className="bg-pink-100 text-pink-700 border-pink-300"
+                    title="You're in a Daily Challenge task"
+                  >
+                    🎯 Daily Challenge
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center space-x-2">
                 <Badge variant={getDifficultyColor(difficulty) as any}>
                   {getDifficultyText(difficulty)}
@@ -282,9 +294,30 @@ export function ExerciseContainer({
         </Card>
 
         {/* Main Exercise */}
-        <Card>
+        <Card className={isDailyChallenge ? "ring-1 ring-pink-200" : undefined}>
           <CardContent className="p-8">
             <div className="space-y-6">
+              {isDailyChallenge && (
+                <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-pink-800 text-sm">
+                    <span>🚀</span>
+                    <span>
+                      Daily Challenge Mode! Complete this task to earn bonus XP
+                      and keep your streak alive.
+                    </span>
+                  </div>
+                  <a
+                    href="#"
+                    className="text-pink-700 text-xs underline hover:text-pink-800"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    What is this?
+                  </a>
+                </div>
+              )}
               {/* Question */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-foreground">

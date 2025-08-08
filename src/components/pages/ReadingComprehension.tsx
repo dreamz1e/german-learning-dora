@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -35,6 +35,28 @@ export function ReadingComprehension({
   const [difficulty, setDifficulty] = useState("A2_BASIC");
   const [topic, setTopic] = useState("");
   const [isGeneratingNewExercise, setIsGeneratingNewExercise] = useState(false);
+  const [isDailyChallenge, setIsDailyChallenge] = useState(false);
+  // Daily Challenge auto-start
+  useEffect(() => {
+    const activeDailyChallenge = localStorage.getItem("activeDailyChallenge");
+    if (activeDailyChallenge) {
+      const challenge = JSON.parse(activeDailyChallenge);
+      if (challenge.taskType === "reading") {
+        setIsDailyChallenge(true);
+        setDifficulty(
+          challenge.difficulty === "Easy"
+            ? "A2_BASIC"
+            : challenge.difficulty === "Medium"
+            ? "B1_BASIC"
+            : "B1_ADVANCED"
+        );
+        if (challenge.content?.theme) {
+          setTopic(challenge.content.theme);
+        }
+        generateExercise();
+      }
+    }
+  }, []);
 
   const readingTopics = [
     "Daily Life",
@@ -130,8 +152,10 @@ export function ReadingComprehension({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: xpAmount,
-          reason: `Reading comprehension: ${score}% score`,
-          category: "EXERCISE",
+          reason: isDailyChallenge
+            ? "Completed daily challenge reading task"
+            : `Reading comprehension: ${score}% score`,
+          category: isDailyChallenge ? "DAILY_CHALLENGE" : "EXERCISE",
         }),
       });
 
@@ -141,12 +165,43 @@ export function ReadingComprehension({
       else if (score >= 50) message = "Not bad! Try reading more German texts.";
       else message = "Keep practicing - you'll improve!";
 
-      addToast({
-        type: score >= 70 ? "success" : score >= 50 ? "warning" : "info",
-        title: "Reading Exercise Complete!",
-        message: `${message} You earned ${xpAmount} XP!`,
-        duration: 5000,
-      });
+      if (isDailyChallenge) {
+        const activeDailyChallenge = localStorage.getItem(
+          "activeDailyChallenge"
+        );
+        if (activeDailyChallenge) {
+          const challenge = JSON.parse(activeDailyChallenge);
+          localStorage.setItem(
+            "completedDailyChallenge",
+            JSON.stringify({
+              taskId: challenge.taskId,
+              taskType: challenge.taskType,
+              completed: true,
+              timeSpent,
+              isCorrect: score >= 70, // treat >=70% as correct
+              xpEarned: xpAmount,
+            })
+          );
+        }
+
+        addToast({
+          type: "success",
+          title: "Daily Challenge Complete! 🎉",
+          message: "Returning to Daily Challenges...",
+          duration: 3000,
+        });
+
+        setTimeout(() => {
+          onNavigate?.("daily-challenge");
+        }, 2000);
+      } else {
+        addToast({
+          type: score >= 70 ? "success" : score >= 50 ? "warning" : "info",
+          title: "Reading Exercise Complete!",
+          message: `${message} You earned ${xpAmount} XP!`,
+          duration: 5000,
+        });
+      }
     } catch (error) {
       console.error("Error awarding XP:", error);
     }
@@ -162,8 +217,9 @@ export function ReadingComprehension({
           Reading Comprehension
         </h1>
         <p className="text-muted-foreground text-lg">
-          Improve your German reading skills with AI-generated texts and
-          questions
+          {isDailyChallenge
+            ? "Complete this reading exercise to finish your daily challenge!"
+            : "Improve your German reading skills with AI-generated texts and questions"}
         </p>
       </div>
 

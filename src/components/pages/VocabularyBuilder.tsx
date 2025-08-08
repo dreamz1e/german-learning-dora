@@ -96,6 +96,37 @@ export function VocabularyBuilder({
             ? "B1_BASIC"
             : "B1_ADVANCED"
         );
+        // If content from Daily Challenge exists, prefill category and mode
+        if (challenge.content?.theme) {
+          // map theme to a broad category for UI
+          const theme: string = challenge.content.theme;
+          if (
+            theme.toLowerCase().includes("essen") ||
+            theme.toLowerCase().includes("food")
+          ) {
+            setCategory("Food & Drinks");
+          } else if (
+            theme.toLowerCase().includes("reise") ||
+            theme.toLowerCase().includes("travel")
+          ) {
+            setCategory("Travel & Transportation");
+          } else if (
+            theme.toLowerCase().includes("arbeit") ||
+            theme.toLowerCase().includes("work")
+          ) {
+            setCategory("Work & Profession");
+          } else if (
+            theme.toLowerCase().includes("gefühl") ||
+            theme.toLowerCase().includes("emotion")
+          ) {
+            setCategory("Hobbies & Activities");
+          } else if (
+            theme.toLowerCase().includes("einkauf") ||
+            theme.toLowerCase().includes("shopping")
+          ) {
+            setCategory("Shopping & Services");
+          }
+        }
         // Auto-generate exercise for daily challenge
         generateExercise();
       }

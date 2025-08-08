@@ -49,6 +49,7 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
     averageTime: 0,
   });
   const [exerciseKey, setExerciseKey] = useState(0);
+  const [dailyTargetCount, setDailyTargetCount] = useState<number | null>(null);
 
   const grammarTopics = [
     "Cases (Nominativ, Akkusativ, Dativ, Genitiv)",
@@ -77,6 +78,15 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
             ? "B1_BASIC"
             : "B1_ADVANCED"
         );
+        // If content from Daily Challenge exists, prefill topic and auto-generate
+        if (challenge.content?.topic) {
+          setGrammarTopic(challenge.content.topic);
+        }
+        if (typeof challenge.content?.examples === "number") {
+          setDailyTargetCount(challenge.content.examples);
+        } else {
+          setDailyTargetCount(5);
+        }
         generateExercise();
       }
     }
@@ -233,11 +243,21 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
       const newResults = [...exerciseResults, result];
       setExerciseResults(newResults);
 
-      // Check if batch is complete using batch info or fallback to 10 exercises
-      const isBatchComplete =
-        (batchInfo && newResults.length >= batchInfo.total) ||
-        newResults.length >= 10 ||
-        isDailyChallenge;
+      // Check if batch is complete
+      let isBatchComplete = false;
+      if (isDailyChallenge) {
+        const target = dailyTargetCount ?? 5;
+        isBatchComplete = newResults.length >= target;
+      } else {
+        // batchInfo.remaining reflects how many items are left AFTER the current one was served
+        // If remaining is 0, this exercise is the last in the batch
+        if (batchInfo) {
+          isBatchComplete = batchInfo.remaining === 0;
+        } else {
+          // Fallback if batch info is unavailable
+          isBatchComplete = newResults.length >= 10;
+        }
+      }
 
       if (isBatchComplete) {
         // Calculate summary statistics
@@ -273,8 +293,8 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
         });
       }
 
-      // Handle daily challenge completion
-      if (isDailyChallenge) {
+      // Handle daily challenge completion ONLY when the daily target/batch is complete
+      if (isDailyChallenge && isBatchComplete) {
         const activeDailyChallenge = localStorage.getItem(
           "activeDailyChallenge"
         );
