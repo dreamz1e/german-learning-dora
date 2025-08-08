@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -34,6 +34,82 @@ export function ReadingExercise({
   const [isCompleted, setIsCompleted] = useState(false);
   const [startTime] = useState(Date.now());
   const { addToast } = useToast();
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [bubble, setBubble] = useState<{
+    word: string;
+    translation: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const requestTranslation = async (
+    word: string,
+    sentence?: string,
+    anchor?: HTMLElement
+  ) => {
+    if (!word) return;
+    try {
+      setIsTranslating(true);
+      const res = await fetch("/api/ai/translate-word", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word, sentence }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+
+      if (anchor && containerRef.current) {
+        const anchorRect = anchor.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const x = anchorRect.left - containerRect.left + anchorRect.width / 2;
+        const y = anchorRect.top - containerRect.top;
+        setBubble({ word, translation: data.translation, x, y });
+        setTimeout(
+          () => setBubble((b) => (b && b.word === word ? null : b)),
+          3000
+        );
+      }
+    } catch (e) {
+      addToast({
+        type: "error",
+        title: "Translation failed",
+        message: "Could not translate the word right now.",
+        duration: 2500,
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const renderClickableGermanText = (value?: string) => {
+    if (!value) return null;
+    const parts = value
+      .split(/(\s+|[.,;:!?()"“”‚’'…])/g)
+      .filter((p) => p !== "");
+    return (
+      <>
+        {parts.map((part, idx) => {
+          const isWord = /[A-Za-zÄÖÜäöüß]/.test(part);
+          if (isWord) {
+            return (
+              <span
+                key={`w-${idx}-${part}`}
+                className="cursor-pointer hover:text-pink-700"
+                onClick={(e) =>
+                  requestTranslation(part, value, e.currentTarget)
+                }
+              >
+                {part}
+              </span>
+            );
+          }
+          return <span key={`t-${idx}`}>{part}</span>;
+        })}
+      </>
+    );
+  };
 
   const handleAnswerSelect = (questionIndex: number, answer: string) => {
     if (!isCompleted) {
@@ -81,7 +157,7 @@ export function ReadingExercise({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 relative" ref={containerRef}>
       {/* Header */}
       <Card>
         <CardHeader>
@@ -104,7 +180,7 @@ export function ReadingExercise({
           <CardContent>
             <div className="prose prose-sm max-w-none">
               <p className="text-foreground leading-relaxed whitespace-pre-line">
-                {text}
+                {renderClickableGermanText(text)}
               </p>
             </div>
           </CardContent>
@@ -321,6 +397,20 @@ export function ReadingExercise({
           </CardContent>
         </Card>
       </div>
+
+      {/* Translation Speech Bubble */}
+      {bubble && (
+        <div
+          className="absolute z-50 -translate-x-1/2"
+          style={{ left: bubble.x, top: Math.max(bubble.y - 40, 0) }}
+          onClick={() => setBubble(null)}
+        >
+          <div className="bg-white border border-pink-200 text-pink-900 rounded-md shadow-lg px-3 py-1.5 text-sm">
+            {bubble.translation}
+          </div>
+          <div className="mx-auto w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-pink-200" />
+        </div>
+      )}
     </div>
   );
 }
