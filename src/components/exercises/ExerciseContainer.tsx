@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -62,6 +62,95 @@ export function ExerciseContainer({
   const [isAnswered, setIsAnswered] = useState(false);
   const [startTime] = useState(Date.now());
   const { addToast } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Translation bubble state
+  const [bubble, setBubble] = useState<{
+    word: string;
+    translation: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const requestTranslation = async (
+    word: string,
+    sentence?: string,
+    anchor?: HTMLElement
+  ) => {
+    if (!word || word === "_______") return;
+    try {
+      setIsTranslating(true);
+      const res = await fetch("/api/ai/translate-word", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word, sentence }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+
+      // Position bubble relative to container
+      if (anchor && containerRef.current) {
+        const anchorRect = anchor.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const x = anchorRect.left - containerRect.left + anchorRect.width / 2;
+        const y = anchorRect.top - containerRect.top; // top of word
+        setBubble({ word, translation: data.translation, x, y });
+        // Auto-hide after 3 seconds
+        setTimeout(
+          () => setBubble((b) => (b && b.word === word ? null : b)),
+          3000
+        );
+      }
+    } catch (e) {
+      addToast({
+        type: "error",
+        title: "Translation failed",
+        message: "Could not translate the word right now.",
+        duration: 2500,
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Render a text with clickable German words; blanks are shown as underscores and are not clickable
+  const renderClickableGermanText = (text?: string) => {
+    if (!text) return null;
+
+    // Replace __BLANK__ tokens with a fixed underscore placeholder for display
+    const BLANK_PLACEHOLDER = "_______";
+    // Split into tokens: keep spaces and punctuation as separate parts
+    const parts = text
+      .replace(/__BLANK__/g, BLANK_PLACEHOLDER)
+      .split(/(\s+|[.,;:!?()"“”‚’'…])/g)
+      .filter((p) => p !== "");
+
+    const fullSentence = text.replace(/__BLANK__/g, BLANK_PLACEHOLDER);
+
+    return (
+      <>
+        {parts.map((part, idx) => {
+          const isWord = /[A-Za-zÄÖÜäöüß]/.test(part);
+          const isBlank = part === BLANK_PLACEHOLDER;
+          if (isWord && !isBlank) {
+            return (
+              <span
+                key={`w-${idx}-${part}`}
+                className="cursor-help underline decoration-dotted decoration-pink-400 underline-offset-4 hover:text-pink-700"
+                onClick={(e) =>
+                  requestTranslation(part, fullSentence, e.currentTarget)
+                }
+              >
+                {part}
+              </span>
+            );
+          }
+          return <span key={`t-${idx}`}>{part}</span>;
+        })}
+      </>
+    );
+  };
 
   // Shuffle options using Fisher-Yates algorithm
   const shuffledOptions = useMemo(() => {
@@ -145,7 +234,7 @@ export function ExerciseContainer({
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 relative">
+    <div className="max-w-4xl mx-auto space-y-6 relative" ref={containerRef}>
       {/* Exercise Container with conditional blur and loading overlay */}
       <div
         className={`${
@@ -192,7 +281,7 @@ export function ExerciseContainer({
               {/* Question */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-foreground">
-                  {question.replace(/__BLANK__/g, "_______")}
+                  {renderClickableGermanText(question)}
                 </h2>
 
                 {/* Context Sentence (if provided) */}
@@ -236,13 +325,22 @@ export function ExerciseContainer({
                         <>
                           {contextText && (
                             <p className="text-pink-900 font-medium italic">
-                              "{contextText}"
+                              {/* Wrap as clickable only if context is likely German */}
+                              {isGrammarExercise || isEnglishToGerman
+                                ? contextText
+                                : renderClickableGermanText(contextText)}
                             </p>
                           )}
                           {/* Show translation only after answer is submitted */}
                           {isAnswered && translationText && (
                             <p className="text-pink-700 text-sm mt-2">
-                              Translation: "{translationText}"
+                              Translation:{" "}
+                              {
+                                // After answering, translationText is shown. Wrap only if it's likely German
+                                isGrammarExercise || isEnglishToGerman
+                                  ? renderClickableGermanText(translationText)
+                                  : translationText
+                              }
                             </p>
                           )}
                         </>
@@ -374,6 +472,20 @@ export function ExerciseContainer({
             </div>
           </CardContent>
         </Card>
+
+        {/* Translation Speech Bubble */}
+        {bubble && (
+          <div
+            className="absolute z-50 -translate-x-1/2"
+            style={{ left: bubble.x, top: Math.max(bubble.y - 40, 0) }}
+            onClick={() => setBubble(null)}
+          >
+            <div className="bg-white border border-pink-200 text-pink-900 rounded-md shadow-lg px-3 py-1.5 text-sm">
+              {bubble.translation}
+            </div>
+            <div className="mx-auto w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-pink-200" />
+          </div>
+        )}
 
         {/* Explanation (shown after answering) */}
         {isAnswered && (
