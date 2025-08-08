@@ -330,7 +330,7 @@ export function Achievements() {
       <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-gray-600">Loading your achievements...</p>
+          <p className="text-muted-foreground">Loading your achievements...</p>
         </div>
       </div>
     );
@@ -342,31 +342,32 @@ export function Achievements() {
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-2">
           <span className="text-4xl">🏆</span>
-          <h1 className="text-3xl font-bold text-gray-900">Achievements</h1>
+          <h1 className="text-3xl font-bold text-foreground">Achievements</h1>
         </div>
-        <p className="text-gray-600 text-lg">
+        <p className="text-muted-foreground text-lg">
           Track your progress and unlock badges as you master German
         </p>
       </div>
 
       {/* Overall Progress */}
-      <Card className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white border-0 shadow-xl">
+      <Card className="relative overflow-hidden bg-card/80 supports-[backdrop-filter]:bg-card/60 backdrop-blur-xl ring-1 ring-border">
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400" />
         <CardContent className="p-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">
+                <h2 className="text-2xl font-bold text-foreground">
                   Your Achievement Progress
                 </h2>
-                <p className="text-yellow-100">
+                <p className="text-muted-foreground">
                   Level {userLevel} • {currentStreak} day streak
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold">
+                <div className="text-3xl font-bold text-foreground">
                   {unlockedCount}/{totalCount}
                 </div>
-                <div className="text-yellow-100 text-sm">
+                <div className="text-muted-foreground text-sm">
                   Achievements Unlocked
                 </div>
               </div>
@@ -381,24 +382,28 @@ export function Achievements() {
             </div>
 
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-xl font-bold">{unlockedCount}</div>
-                <div className="text-yellow-100 text-sm">🔓 Unlocked</div>
+              <div className="rounded-lg p-3 ring-1 ring-border bg-card">
+                <div className="text-xl font-bold text-foreground">
+                  {unlockedCount}
+                </div>
+                <div className="text-muted-foreground text-sm">🔓 Unlocked</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-xl font-bold">
+              <div className="rounded-lg p-3 ring-1 ring-border bg-card">
+                <div className="text-xl font-bold text-foreground">
                   {totalCount - unlockedCount}
                 </div>
-                <div className="text-yellow-100 text-sm">🔒 Locked</div>
+                <div className="text-muted-foreground text-sm">🔒 Locked</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-xl font-bold">
+              <div className="rounded-lg p-3 ring-1 ring-border bg-card">
+                <div className="text-xl font-bold text-foreground">
                   {achievements.reduce(
                     (sum, a) => sum + (a.isUnlocked ? a.xpReward : 0),
                     0
                   )}
                 </div>
-                <div className="text-yellow-100 text-sm">⭐ XP Earned</div>
+                <div className="text-muted-foreground text-sm">
+                  ⭐ XP Earned
+                </div>
               </div>
             </div>
           </div>
@@ -406,10 +411,10 @@ export function Achievements() {
       </Card>
 
       {/* Category Filters */}
-      <Card>
+      <Card className="ring-1 ring-border/80">
         <CardContent className="p-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Categories</h3>
+            <h3 className="text-lg font-bold text-foreground">Categories</h3>
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
                 <Button
@@ -421,21 +426,21 @@ export function Achievements() {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`${
                     selectedCategory === category.id
-                      ? "bg-pink-600 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-accent"
                   }`}
                 >
                   {category.name}
                   <Badge
                     variant="secondary"
-                    className="ml-2 bg-gray-200 text-gray-700"
+                    className="ml-2 bg-secondary text-foreground/80"
                   >
                     {category.achievements.length}
                   </Badge>
                 </Button>
               ))}
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               {selectedCategoryData.description}
             </p>
           </div>
@@ -537,7 +542,7 @@ export function Achievements() {
                       className={`text-xs ${
                         achievement.isUnlocked
                           ? "border-yellow-300 text-yellow-700"
-                          : "border-gray-300 text-gray-600"
+                          : "border-input text-foreground/70"
                       }`}
                     >
                       {achievement.category.replace("_", " ")}
@@ -546,7 +551,7 @@ export function Achievements() {
 
                   {/* Unlock Date */}
                   {achievement.isUnlocked && achievement.unlockedAt && (
-                    <p className="text-xs text-yellow-600">
+                    <p className="text-xs text-yellow-700">
                       Unlocked on{" "}
                       {new Date(achievement.unlockedAt).toLocaleDateString()}
                     </p>

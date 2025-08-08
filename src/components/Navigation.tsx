@@ -109,7 +109,7 @@ export function Navigation({
     <>
       {/* Mobile Menu Button */}
       <button
-        className="lg:hidden fixed top-2 right-30 z-50 p-3 bg-white rounded-lg shadow-lg border touch-manipulation"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-background/80 supports-[backdrop-filter]:bg-background/60 backdrop-blur-md ring-1 ring-border shadow-xl touch-manipulation"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
       >
@@ -119,7 +119,7 @@ export function Navigation({
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="lg:hidden fixed inset-0 z-40 bg-black/25 supports-[backdrop-filter]:bg-black/10 backdrop-blur-sm transition-colors"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -127,8 +127,13 @@ export function Navigation({
       {/* Sidebar */}
       <aside
         className={`
-        fixed top-0 left-0 h-full w-80 bg-white border-r shadow-lg z-40
+        fixed top-0 left-0 h-full w-80 ring-1 ring-border shadow-2xl z-50 overflow-hidden
         transform transition-transform duration-300 ease-in-out
+        ${
+          isMobileMenuOpen
+            ? "bg-card"
+            : "bg-card/70 supports-[backdrop-filter]:bg-card/55 backdrop-blur-xl"
+        }
         ${
           isMobileMenuOpen
             ? "translate-x-0"
@@ -136,9 +141,10 @@ export function Navigation({
         }
       `}
       >
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-rose-400 to-primary" />
         <div className="flex flex-col h-full">
           {/* Logo & User Info */}
-          <div className="p-6 border-b bg-gradient-to-r from-pink-50 to-rose-50">
+          <div className="p-6 border-b bg-gradient-to-br from-pink-50/60 to-rose-50/30">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-lg">D</span>
@@ -164,11 +170,11 @@ export function Navigation({
                 className="w-full"
               />
 
-              <div className="flex items-center justify-between text-xs text-gray-600">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                   {xpProgress} / {xpNeeded} XP
                 </span>
-                <span className="flex items-center space-x-1">
+                <span className="flex items-center gap-1">
                   <span>🔥</span>
                   <span>{currentStreak} days</span>
                 </span>
@@ -187,13 +193,12 @@ export function Navigation({
                     setIsMobileMenuOpen(false);
                   }}
                   className={`
-                    w-full text-left p-4 rounded-lg transition-all duration-200 touch-manipulation
-                    hover:bg-pink-50 hover:border-pink-200 border border-transparent
-                    active:scale-95 active:bg-pink-100
+                    w-full text-left p-4 rounded-xl transition-all duration-200 touch-manipulation ring-1
+                    hover:bg-primary/10 hover:ring-primary/30 active:scale-95
                     ${
                       currentPage === item.id
-                        ? "bg-pink-50 border-pink-200 text-pink-700"
-                        : "text-gray-700"
+                        ? "bg-primary/15 text-primary ring-primary/40"
+                        : "bg-transparent text-foreground/80 ring-transparent"
                     }
                   `}
                 >
@@ -213,7 +218,7 @@ export function Navigation({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-gray-700 mt-1 font-medium">
+                      <p className="text-xs text-muted-foreground mt-1 font-medium">
                         {item.description}
                       </p>
                     </div>
@@ -226,7 +231,7 @@ export function Navigation({
           {/* Bottom Actions */}
           <div className="p-4 border-t">
             <div className="space-y-2">
-              <div className="text-xs text-gray-800 text-center font-medium">
+              <div className="text-xs text-foreground/80 text-center font-medium">
                 Welcome back, {user.profile?.displayName || user.username}!
               </div>
               <Button

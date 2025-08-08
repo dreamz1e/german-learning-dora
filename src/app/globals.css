@@ -26,6 +26,7 @@
   --chart-4: hsl(300 40% 70%);
   --chart-5: hsl(285 50% 65%);
   --radius: 0.5rem;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -52,34 +53,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: hsl(329 25% 8%);
-    --foreground: hsl(329 25% 95%);
-    --card: hsl(329 25% 8%);
-    --card-foreground: hsl(329 25% 95%);
-    --popover: hsl(329 25% 8%);
-    --popover-foreground: hsl(329 25% 95%);
-    --primary: hsl(330 65% 65%);
-    --primary-foreground: hsl(329 25% 10%);
-    --secondary: hsl(329 25% 15%);
-    --secondary-foreground: hsl(329 25% 95%);
-    --muted: hsl(329 25% 15%);
-    --muted-foreground: hsl(329 15% 75%);
-    --accent: hsl(329 25% 18%);
-    --accent-foreground: hsl(329 25% 95%);
-    --destructive: hsl(0 62.8% 50%);
-    --destructive-foreground: hsl(329 25% 95%);
-    --border: hsl(329 25% 20%);
-    --input: hsl(329 25% 20%);
-    --ring: hsl(330 65% 75%);
-    --chart-1: hsl(330 65% 65%);
-    --chart-2: hsl(315 45% 70%);
-    --chart-3: hsl(345 55% 65%);
-    --chart-4: hsl(300 40% 75%);
-    --chart-5: hsl(285 50% 70%);
-  }
-}
+/* Force light theme regardless of OS preference */
 
 * {
   border-color: hsl(var(--border));

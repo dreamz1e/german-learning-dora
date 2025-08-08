@@ -126,7 +126,7 @@ export function WritingExercise({
   };
 
   const getWordCountColor = () => {
-    if (wordCount === 0) return "text-gray-600";
+    if (wordCount === 0) return "text-muted-foreground";
     if (!isWithinSuggestedRange) return "text-yellow-600"; // below/above suggestion
     return "text-green-600";
   };
@@ -277,14 +277,14 @@ export function WritingExercise({
               {prompt.guidelines.map((guideline, index) => (
                 <li
                   key={index}
-                  className="flex items-start space-x-2 text-sm bg-white/90 border border-gray-200 rounded-md p-2"
+                  className="flex items-start space-x-2 text-sm bg-card ring-1 ring-border rounded-md p-2"
                 >
                   <span className="text-pink-600 mt-1">•</span>
                   <span>
-                    <span className="block text-gray-900 font-medium">
+                    <span className="block text-foreground font-medium">
                       {guideline.de}
                     </span>
-                    <span className="block italic text-gray-600 text-xs">
+                    <span className="block italic text-muted-foreground text-xs">
                       {guideline.en}
                     </span>
                   </span>
@@ -294,10 +294,10 @@ export function WritingExercise({
           </div>
 
           {/* Word Count Guidance */}
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-secondary p-3 rounded-lg">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-700">Suggested word count:</span>
-              <span className="font-medium text-gray-800">
+              <span className="text-foreground/80">Suggested word count:</span>
+              <span className="font-medium text-foreground">
                 {prompt.minWords} - {prompt.maxWords} words
               </span>
             </div>
@@ -335,23 +335,23 @@ export function WritingExercise({
                 w-full h-64 p-4 border-2 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-primary
                 ${
                   isSubmitted
-                    ? "bg-gray-50 cursor-not-allowed text-gray-600 border-gray-300"
-                    : "bg-white text-gray-900 border-gray-300 hover:border-gray-400"
+                    ? "bg-secondary cursor-not-allowed text-foreground/70 border-input"
+                    : "bg-card text-foreground border-input hover:border-primary/40"
                 }
-                font-sans text-base leading-relaxed placeholder:text-gray-500
+                font-sans text-base leading-relaxed placeholder:text-muted-foreground
                 transition-all duration-200
               `}
             />
 
             {/* Progress Bar */}
             <div className="space-y-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-secondary rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all duration-300 ${
                     isWithinSuggestedRange
                       ? "bg-green-500"
                       : wordCount === 0
-                      ? "bg-gray-300"
+                      ? "bg-muted"
                       : "bg-yellow-500"
                   }`}
                   style={{
@@ -362,7 +362,7 @@ export function WritingExercise({
                   }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{prompt.minWords} suggested min</span>
                 <span>{prompt.maxWords} suggested max</span>
               </div>
@@ -484,7 +484,8 @@ export function WritingExercise({
       {showEvaluation && evaluation && (
         <div className="space-y-6">
           {/* Comprehensive Evaluation Summary */}
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="relative overflow-hidden ring-1 ring-border/80 bg-card/70">
+            <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-400" />
             <CardHeader>
               <CardTitle className="text-xl text-blue-900 flex items-center space-x-2">
                 <span className="text-2xl">📊</span>
@@ -497,26 +498,34 @@ export function WritingExercise({
             <CardContent>
               {/* Quick Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div className="text-center p-3 bg-white rounded-lg border shadow-sm">
-                  <div className="text-xs text-gray-500 mb-1">WORDS</div>
-                  <div className="text-xl font-bold text-gray-700">
+                <div className="text-center p-3 bg-card rounded-lg ring-1 ring-border shadow-sm">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    WORDS
+                  </div>
+                  <div className="text-xl font-bold text-foreground">
                     {evaluation.wordCount}
                   </div>
                 </div>
-                <div className="text-center p-3 bg-white rounded-lg border shadow-sm">
-                  <div className="text-xs text-gray-500 mb-1">ERRORS</div>
+                <div className="text-center p-3 bg-card rounded-lg ring-1 ring-border shadow-sm">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    ERRORS
+                  </div>
                   <div className="text-xl font-bold text-red-600">
                     {evaluation.errors?.length || 0}
                   </div>
                 </div>
-                <div className="text-center p-3 bg-white rounded-lg border shadow-sm">
-                  <div className="text-xs text-gray-500 mb-1">LEVEL</div>
+                <div className="text-center p-3 bg-card rounded-lg ring-1 ring-border shadow-sm">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    LEVEL
+                  </div>
                   <div className="text-sm font-bold text-blue-600">
                     {evaluation.difficulty?.replace("_", " ")}
                   </div>
                 </div>
-                <div className="text-center p-3 bg-white rounded-lg border shadow-sm">
-                  <div className="text-xs text-gray-500 mb-1">GRADE</div>
+                <div className="text-center p-3 bg-card rounded-lg ring-1 ring-border shadow-sm">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    GRADE
+                  </div>
                   <div
                     className={`text-xl font-bold ${getScoreColor(
                       evaluation.overallScore

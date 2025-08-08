@@ -549,13 +549,14 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
       </div>
 
       {/* Progress Overview */}
-      <Card className="bg-gradient-to-r from-pink-600 to-rose-700 text-white border-0 shadow-xl">
+      <Card className="relative overflow-hidden bg-card/80 supports-[backdrop-filter]:bg-card/60 backdrop-blur-xl ring-1 ring-border">
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400" />
         <CardContent className="p-6">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">Today's Progress</h2>
-                <p className="text-pink-100">
+                <p className="text-muted-foreground">
                   Level {userLevel} •{" "}
                   {new Date().toLocaleDateString("en-US", {
                     weekday: "long",
@@ -565,10 +566,12 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold">
+                <div className="text-3xl font-bold text-foreground">
                   {completedTasks.length}/{dailyTasks.length}
                 </div>
-                <div className="text-pink-100 text-sm">Tasks Complete</div>
+                <div className="text-muted-foreground text-sm">
+                  Tasks Complete
+                </div>
               </div>
             </div>
 
@@ -581,23 +584,33 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
             </div>
 
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-2xl font-bold">{currentStreak}</div>
-                <div className="text-pink-100 text-sm">🔥 Day Streak</div>
+              <div className="rounded-lg p-3 ring-1 ring-border bg-card">
+                <div className="text-2xl font-bold text-foreground">
+                  {currentStreak}
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  🔥 Day Streak
+                </div>
               </div>
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-2xl font-bold">{totalXP}</div>
-                <div className="text-pink-100 text-sm">⭐ XP Available</div>
+              <div className="rounded-lg p-3 ring-1 ring-border bg-card">
+                <div className="text-2xl font-bold text-foreground">
+                  {totalXP}
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  ⭐ XP Available
+                </div>
               </div>
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-2xl font-bold">+{bonusXP}</div>
-                <div className="text-pink-100 text-sm">🎁 Bonus XP</div>
+              <div className="rounded-lg p-3 ring-1 ring-border bg-card">
+                <div className="text-2xl font-bold text-foreground">
+                  +{bonusXP}
+                </div>
+                <div className="text-muted-foreground text-sm">🎁 Bonus XP</div>
               </div>
             </div>
 
             {allTasksCompleted && (
-              <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-4 text-center">
-                <p className="text-green-100 font-semibold">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <p className="text-green-700 font-semibold">
                   All challenges completed! Come back tomorrow for new tasks!
                 </p>
               </div>

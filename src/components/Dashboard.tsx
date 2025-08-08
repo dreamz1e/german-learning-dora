@@ -69,29 +69,32 @@ export function Dashboard() {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100">
+      <div className="min-h-screen">
         <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
 
         {/* Main Content Area */}
         <main className="lg:ml-80 min-h-screen">
           {/* Top Header */}
-          <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-            <div className="px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="lg:hidden">
-                  <h1 className="text-xl font-bold text-primary">Dora</h1>
-                </div>
-
-                <div className="flex items-center space-x-4 ml-auto">
-                  <div className="hidden sm:block text-sm text-gray-700 font-medium">
-                    Welcome back, {user.profile?.displayName || user.username}!
+          <header className="sticky top-0 z-30">
+            <div className="bg-card/75 supports-[backdrop-filter]:bg-card/60 backdrop-blur-xl border-b ring-1 ring-border">
+              <div className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="lg:hidden pl-14">
+                    <h1 className="text-xl font-bold text-primary">Dora</h1>
                   </div>
-                  <button
-                    onClick={logout}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900 rounded-lg transition-all duration-200 border border-gray-300"
-                  >
-                    Sign Out
-                  </button>
+
+                  <div className="flex items-center space-x-4 ml-auto">
+                    <div className="hidden sm:block text-sm text-gray-700 font-medium">
+                      Welcome back, {user.profile?.displayName || user.username}
+                      !
+                    </div>
+                    <button
+                      onClick={logout}
+                      className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-secondary hover:bg-secondary/80 border border-input"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
+import { Flame, Star, Trophy, Target, Clock, Sparkles } from "lucide-react";
 
 interface DashboardOverviewProps {
   onNavigate?: (page: string) => void;
@@ -20,6 +21,7 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
   const weeklyXP = user.progress?.weeklyXP || 0;
   const currentStreak = user.dailyStreak?.currentStreak || 0;
   const longestStreak = user.dailyStreak?.longestStreak || 0;
+  const displayName = user.profile?.displayName || user.username;
 
   // Calculate XP progress for current level
   const xpForCurrentLevel = (currentLevel - 1) * 100;
@@ -108,21 +110,56 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground text-lg">
-          Track your progress and continue your German learning journey
-        </p>
+    <div className="space-y-10">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-2xl border bg-card/80 supports-[backdrop-filter]:bg-card/60 backdrop-blur-xl ring-1 ring-border shadow-xl">
+        <div className="absolute -top-24 -right-20 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-rose-400/20 blur-3xl" />
+        <div className="relative p-6 md:p-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground bg-background/60">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                Welcome back, {displayName}!
+              </div>
+              <h1 className="mt-3 text-3xl md:text-4xl font-bold tracking-tight">
+                Your German learning overview
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                Keep your streak alive and level up with focused activities.
+              </p>
+            </div>
+            <div className="w-full md:w-auto min-w-[260px]">
+              <Card className="relative overflow-hidden bg-card/70">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Level {currentLevel} progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Progress value={xpProgress} max={xpNeeded} size="sm" />
+                  <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                    <span>{xpProgress} XP</span>
+                    <span>
+                      {xpNeeded} to level {currentLevel + 1}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Progress Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-primary">
+        <Card className="relative overflow-hidden ring-1 ring-border/80 bg-card/70 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary via-rose-400 to-primary" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Level</CardTitle>
-            <span className="text-2xl">🎯</span>
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <Target className="h-5 w-5" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">
@@ -143,14 +180,19 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-yellow-500">
+        <Card className="relative overflow-hidden ring-1 ring-border/80 bg-card/70 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-400" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total XP</CardTitle>
-            <span className="text-2xl">⭐</span>
+            <div className="h-10 w-10 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-600">
+              <Star className="h-5 w-5" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-yellow-600">{totalXP}</div>
-            <p className="text-xs text-gray-600 mt-1">+{weeklyXP} this week</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              +{weeklyXP} this week
+            </p>
             <div className="flex items-center mt-2">
               <Badge variant="secondary" className="text-xs">
                 All-time total
@@ -159,18 +201,21 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-orange-500">
+        <Card className="relative overflow-hidden ring-1 ring-border/80 bg-card/70 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-orange-400 via-rose-400 to-orange-400" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Current Streak
             </CardTitle>
-            <span className="text-2xl">🔥</span>
+            <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600">
+              <Flame className="h-5 w-5" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-orange-600">
               {currentStreak}
             </div>
-            <p className="text-xs text-gray-600 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {currentStreak === 0
                 ? "Start your streak today!"
                 : "days in a row"}
@@ -186,16 +231,21 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
+        <Card className="relative overflow-hidden ring-1 ring-border/80 bg-card/70 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Best Streak</CardTitle>
-            <span className="text-2xl">🏆</span>
+            <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600">
+              <Trophy className="h-5 w-5" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-purple-600">
               {longestStreak}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Personal record</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Personal record
+            </p>
             <div className="flex items-center mt-2">
               <Badge variant="info" className="text-xs">
                 Personal best
@@ -206,17 +256,18 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
       </div>
 
       {/* Daily Challenge Highlight */}
-      <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
+      <Card className="relative overflow-hidden bg-gradient-to-br from-pink-50 via-rose-50 to-white border-pink-200 ring-1 ring-pink-200/60">
+        <div className="absolute -top-12 -right-10 h-40 w-40 rounded-full bg-primary/20 blur-2xl" />
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-pink-700">
-            <span className="text-2xl">🎯</span>
+          <CardTitle className="flex items-center gap-2 text-pink-700">
+            <Target className="h-5 w-5" />
             <span>Today's Challenge</span>
             <Badge variant="success">+50 XP Bonus</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <p className="text-pink-600">
+            <p className="text-pink-700/90">
               Complete your daily German learning challenge to maintain your
               streak and make you Chrisy proud! :D
             </p>
@@ -224,10 +275,16 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
               <Button size="lg" className="flex-1 sm:flex-none">
                 Start Daily Challenge
               </Button>
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                <span>⏱️ ~20 minutes</span>
-                <span>🎯 Mixed difficulty</span>
-                <span>🏆 Streak bonus</span>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-4 w-4" /> ~20 minutes
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Target className="h-4 w-4" /> Mixed difficulty
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Trophy className="h-4 w-4" /> Streak bonus
+                </span>
               </div>
             </div>
           </div>
@@ -247,29 +304,34 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
           {learningActivities.map((activity) => (
             <Card
               key={activity.id}
-              className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-white/70 backdrop-blur-sm hover:bg-white hover:scale-105"
+              className="group relative overflow-hidden cursor-pointer ring-1 ring-border bg-card/70 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
             >
+              <div
+                className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${activity.color}`}
+              />
               <CardHeader className="pb-3">
                 <div
                   className={`w-12 h-12 rounded-lg bg-gradient-to-r ${activity.color} flex items-center justify-center text-2xl text-white mb-3 shadow-lg`}
                 >
                   {activity.icon}
                 </div>
-                <CardTitle className="text-lg text-gray-900 group-hover:text-primary transition-colors">
+                <CardTitle className="text-lg text-foreground group-hover:text-primary transition-colors">
                   {activity.title}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-gray-600">{activity.description}</p>
+                <p className="text-sm text-muted-foreground">
+                  {activity.description}
+                </p>
 
                 <div className="flex items-center justify-between text-xs">
                   <Badge variant="outline">{activity.difficulty}</Badge>
-                  <span className="text-gray-600 font-medium">
+                  <span className="text-foreground/80 font-medium">
                     +{activity.xpReward} XP
                   </span>
                 </div>
 
-                <div className="flex items-center text-xs text-gray-600">
+                <div className="flex items-center text-xs text-muted-foreground">
                   <span>⏱️ {activity.estimatedTime}</span>
                 </div>
 
@@ -289,10 +351,11 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
 
       {/* Recent Achievements */}
       {user.achievements && user.achievements.length > 0 && (
-        <Card>
+        <Card className="relative overflow-hidden ring-1 ring-border/80">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400" />
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <span className="text-2xl">🏅</span>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-amber-500" />
               <span>Recent Achievements</span>
             </CardTitle>
           </CardHeader>
@@ -301,16 +364,16 @@ export function DashboardOverview({ onNavigate }: DashboardOverviewProps = {}) {
               {user.achievements.slice(0, 3).map((userAchievement) => (
                 <div
                   key={userAchievement.id}
-                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg"
+                  className="flex items-center gap-3 p-4 rounded-lg ring-1 ring-amber-200/60 bg-gradient-to-r from-yellow-50 to-orange-50"
                 >
                   <span className="text-3xl">
                     {userAchievement.achievement.icon}
                   </span>
                   <div>
-                    <h4 className="font-medium text-yellow-800">
+                    <h4 className="font-medium text-amber-800">
                       {userAchievement.achievement.name}
                     </h4>
-                    <p className="text-xs text-yellow-600">
+                    <p className="text-xs text-amber-700">
                       +{userAchievement.achievement.xpReward} XP
                     </p>
                   </div>

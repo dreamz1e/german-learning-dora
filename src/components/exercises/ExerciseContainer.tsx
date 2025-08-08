@@ -33,6 +33,8 @@ interface ExerciseContainerProps {
   averageTime?: number;
   onContinue?: () => void;
   isDailyChallenge?: boolean;
+  // When false, disables inline word translation (click-to-translate and bubble)
+  enableWordTranslation?: boolean;
 }
 
 export function ExerciseContainer({
@@ -57,6 +59,7 @@ export function ExerciseContainer({
   averageTime = 0,
   onContinue,
   isDailyChallenge = false,
+  enableWordTranslation = true,
 }: ExerciseContainerProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [isAnswered, setIsAnswered] = useState(false);
@@ -120,13 +123,17 @@ export function ExerciseContainer({
 
     // Replace __BLANK__ tokens with a fixed underscore placeholder for display
     const BLANK_PLACEHOLDER = "_______";
+    const fullSentence = text.replace(/__BLANK__/g, BLANK_PLACEHOLDER);
+
+    // If translation is disabled, just return plain text with blanks shown
+    if (!enableWordTranslation) {
+      return <>{fullSentence}</>;
+    }
+
     // Split into tokens: keep spaces and punctuation as separate parts
-    const parts = text
-      .replace(/__BLANK__/g, BLANK_PLACEHOLDER)
+    const parts = fullSentence
       .split(/(\s+|[.,;:!?()"“”‚’'…])/g)
       .filter((p) => p !== "");
-
-    const fullSentence = text.replace(/__BLANK__/g, BLANK_PLACEHOLDER);
 
     return (
       <>
@@ -243,8 +250,8 @@ export function ExerciseContainer({
       >
         {/* Loading Overlay - positioned relative to exercise container */}
         {isLoadingNext && (
-          <div className="absolute inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50 rounded-lg">
-            <div className="bg-white rounded-lg p-6 flex items-center space-x-3 shadow-lg border">
+          <div className="absolute inset-0 backdrop-blur-sm bg-card/40 flex items-center justify-center z-50 rounded-lg">
+            <div className="bg-card rounded-lg p-6 flex items-center space-x-3 shadow-lg ring-1 ring-border">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               <span className="text-lg font-medium">
                 Generating next exercise...
@@ -325,8 +332,10 @@ export function ExerciseContainer({
                         <>
                           {contextText && (
                             <p className="text-pink-900 font-medium italic">
-                              {/* Wrap as clickable only if context is likely German */}
-                              {isGrammarExercise || isEnglishToGerman
+                              {/* Wrap as clickable only if enabled and context is likely German */}
+                              {!enableWordTranslation
+                                ? contextText
+                                : isGrammarExercise || isEnglishToGerman
                                 ? contextText
                                 : renderClickableGermanText(contextText)}
                             </p>
@@ -336,8 +345,10 @@ export function ExerciseContainer({
                             <p className="text-pink-700 text-sm mt-2">
                               Translation:{" "}
                               {
-                                // After answering, translationText is shown. Wrap only if it's likely German
-                                isGrammarExercise || isEnglishToGerman
+                                // After answering, translationText is shown. Wrap only if enabled and it's likely German
+                                !enableWordTranslation
+                                  ? translationText
+                                  : isGrammarExercise || isEnglishToGerman
                                   ? renderClickableGermanText(translationText)
                                   : translationText
                               }
@@ -474,13 +485,13 @@ export function ExerciseContainer({
         </Card>
 
         {/* Translation Speech Bubble */}
-        {bubble && (
+        {enableWordTranslation && bubble && (
           <div
             className="absolute z-50 -translate-x-1/2"
             style={{ left: bubble.x, top: Math.max(bubble.y - 40, 0) }}
             onClick={() => setBubble(null)}
           >
-            <div className="bg-white border border-pink-200 text-pink-900 rounded-md shadow-lg px-3 py-1.5 text-sm">
+            <div className="bg-card ring-1 ring-pink-200 text-pink-900 rounded-md shadow-lg px-3 py-1.5 text-sm">
               {bubble.translation}
             </div>
             <div className="mx-auto w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-pink-200" />

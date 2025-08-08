@@ -179,7 +179,7 @@ export function ErrorCorrectionExercise({
         <CardContent className="p-6">
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground">Task:</h3>
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-lg text-foreground/80 leading-relaxed">
               {instruction}
             </p>
             <div className="bg-pink-50 border-l-4 border-pink-400 p-3 rounded-r-lg">
@@ -204,7 +204,7 @@ export function ErrorCorrectionExercise({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="p-4 border-2 border-gray-200 rounded-lg bg-gray-50 min-h-32">
+            <div className="p-4 border-2 border-input rounded-lg bg-secondary min-h-32">
               <div className="text-lg leading-relaxed space-x-1">
                 {renderTextWithHighlights()}
               </div>
@@ -212,7 +212,7 @@ export function ErrorCorrectionExercise({
 
             {isSubmitted && (
               <div className="space-y-3">
-                <h4 className="font-semibold text-gray-700">Legend:</h4>
+                <h4 className="font-semibold text-foreground/80">Legend:</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 bg-green-200 rounded"></div>
@@ -227,7 +227,7 @@ export function ErrorCorrectionExercise({
                     <span>False positive</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-gray-100 rounded border"></div>
+                    <div className="w-4 h-4 bg-secondary rounded border"></div>
                     <span>Correct</span>
                   </div>
                 </div>

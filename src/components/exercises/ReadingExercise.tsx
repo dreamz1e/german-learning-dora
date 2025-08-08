@@ -405,7 +405,7 @@ export function ReadingExercise({
           style={{ left: bubble.x, top: Math.max(bubble.y - 40, 0) }}
           onClick={() => setBubble(null)}
         >
-          <div className="bg-white border border-pink-200 text-pink-900 rounded-md shadow-lg px-3 py-1.5 text-sm">
+          <div className="bg-card ring-1 ring-pink-200 text-pink-900 rounded-md shadow-lg px-3 py-1.5 text-sm">
             {bubble.translation}
           </div>
           <div className="mx-auto w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-pink-200" />

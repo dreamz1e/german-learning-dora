@@ -131,7 +131,7 @@ export function SentenceConstructionExercise({
         <CardContent className="p-6">
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground">Task:</h3>
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-lg text-foreground/80 leading-relaxed">
               {instruction}
             </p>
           </div>
@@ -153,13 +153,13 @@ export function SentenceConstructionExercise({
         <CardContent className="space-y-6">
           {/* Constructed Sentence Display */}
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-700">Your Sentence:</h4>
+            <h4 className="font-medium text-foreground/80">Your Sentence:</h4>
             <div
               className={`
               min-h-16 p-4 border-2 border-dashed rounded-lg transition-colors
               ${
                 constructedSentence.length === 0
-                  ? "border-gray-300 bg-gray-50"
+                  ? "border-input bg-secondary"
                   : isSubmitted
                   ? isCorrect
                     ? "border-green-500 bg-green-50"
@@ -170,7 +170,7 @@ export function SentenceConstructionExercise({
             >
               <div className="flex flex-wrap items-center gap-2">
                 {constructedSentence.length === 0 ? (
-                  <span className="text-gray-500 italic">
+                  <span className="text-muted-foreground italic">
                     Click word blocks below to build your sentence
                   </span>
                 ) : (
@@ -181,7 +181,7 @@ export function SentenceConstructionExercise({
                         px-3 py-2 rounded-lg border cursor-pointer transition-colors
                         ${
                           isSubmitted
-                            ? "cursor-default bg-gray-100 text-gray-700"
+                            ? "cursor-default bg-secondary text-foreground/80"
                             : "bg-pink-100 border-pink-300 hover:bg-pink-200 text-pink-900"
                         }
                       `}
@@ -199,7 +199,7 @@ export function SentenceConstructionExercise({
 
           {/* Available Word Blocks */}
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-700">Available Words:</h4>
+            <h4 className="font-medium text-foreground/80">Available Words:</h4>
             <div className="flex flex-wrap gap-3">
               {availableWords.map((wordBlock) => (
                 <button
@@ -214,10 +214,10 @@ export function SentenceConstructionExercise({
                     px-4 py-3 rounded-lg border-2 font-medium transition-all duration-200
                     ${
                       wordBlock.isUsed
-                        ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed"
+                        ? "bg-secondary border-input text-muted-foreground cursor-not-allowed"
                         : isSubmitted
-                        ? "bg-gray-200 border-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-white border-gray-300 text-gray-700 hover:border-pink-400 hover:bg-pink-50 cursor-pointer active:scale-95"
+                        ? "bg-secondary border-input text-foreground/70 cursor-not-allowed"
+                        : "bg-card border-input text-foreground hover:border-pink-400 hover:bg-pink-50 cursor-pointer active:scale-95"
                     }
                   `}
                 >

@@ -169,7 +169,8 @@ export function ReadingComprehension({
 
       {/* Exercise Generator */}
       {!currentExercise && (
-        <Card>
+        <Card className="relative overflow-hidden ring-1 ring-border/80 bg-card/70">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400" />
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <span className="text-2xl">📖</span>
@@ -199,7 +200,7 @@ export function ReadingComprehension({
                         ${
                           difficulty === level
                             ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary hover:bg-pink-50"
+                            : "border-input bg-card hover:border-primary hover:bg-pink-50"
                         }
                       `}
                     >
@@ -217,7 +218,7 @@ export function ReadingComprehension({
                 <select
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  className="w-full p-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full p-3 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
                 >
                   <option value="">Any Topic</option>
                   {readingTopics.map((topicOption) => (

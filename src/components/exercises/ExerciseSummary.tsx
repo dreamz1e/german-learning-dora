@@ -40,7 +40,8 @@ export function ExerciseSummary({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Summary Header */}
-      <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
+      <Card className="relative overflow-hidden ring-1 ring-border/80 bg-card/70">
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-pink-400 via-purple-400 to-pink-400" />
         <CardHeader>
           <div className="text-center space-y-4">
             <div className="text-6xl">
@@ -56,7 +57,7 @@ export function ExerciseSummary({
             {isDailyChallenge && (
               <Badge
                 variant="success"
-                className="bg-pink-100 text-pink-700 border-pink-300"
+                className="bg-pink-100 text-pink-700 ring-1 ring-pink-300"
               >
                 🎯 Daily Challenge Complete!
               </Badge>
@@ -103,7 +104,7 @@ export function ExerciseSummary({
       </div>
 
       {/* Detailed Results */}
-      <Card>
+      <Card className="ring-1 ring-border/80">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <span className="text-xl">📊</span>
