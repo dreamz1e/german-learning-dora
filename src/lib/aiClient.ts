@@ -127,7 +127,7 @@ export async function generateBatchVocabularyExercises(
         ),
       },
     ],
-    temperature: 0.8,
+    temperature: 0.2,
     max_tokens: 6000,
     response_format: {
       type: "json_schema",
@@ -202,7 +202,7 @@ export async function generateBatchGrammarExercises(
         content: batchGrammarPrompt(difficulty, selectedTopic, variationSeed),
       },
     ],
-    temperature: 0.8,
+    temperature: 0.2,
     max_tokens: 7000,
     response_format: {
       type: "json_schema",
