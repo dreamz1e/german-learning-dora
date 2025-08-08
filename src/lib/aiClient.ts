@@ -352,8 +352,8 @@ export async function generateVocabularyExercise(
         topic
       );
 
-      // Add randomness to temperature based on attempt number
-      const temperature = 0.7 + attempt * 0.1;
+      // Lower base temperature for reliability; gently increase on retries
+      const temperature = 0.3 + attempt * 0.1;
 
       const response = await openai.chat.completions.create({
         model: model,
@@ -368,7 +368,9 @@ export async function generateVocabularyExercise(
             ),
           },
         ],
-        temperature: Math.min(temperature, 1.0),
+        temperature: Math.min(temperature, 0.6),
+        presence_penalty: 0.2,
+        frequency_penalty: 0.2,
         max_tokens: 500,
         response_format: {
           type: "json_schema",
@@ -450,8 +452,8 @@ export async function generateGrammarExercise(
         grammarTopic
       );
 
-      // Add randomness to temperature based on attempt number
-      const temperature = 0.7 + attempt * 0.1; // Increase creativity on retries
+      // Lower base temperature for reliability; gently increase on retries
+      const temperature = 0.3 + attempt * 0.1;
 
       const response = await openai.chat.completions.create({
         model: model,
@@ -466,7 +468,9 @@ export async function generateGrammarExercise(
             ),
           },
         ],
-        temperature: Math.min(temperature, 1.0),
+        temperature: Math.min(temperature, 0.5),
+        presence_penalty: 0.2,
+        frequency_penalty: 0.2,
         max_tokens: 600,
         response_format: {
           type: "json_schema",
