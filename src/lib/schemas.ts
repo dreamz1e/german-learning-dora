@@ -76,52 +76,59 @@ export const GermanExerciseSchema = {
 };
 
 export const VocabularyWordsSchema = {
-  type: "array",
-  items: {
-    type: "object",
-    properties: {
-      german: {
-        type: "string",
-        minLength: 1,
-        maxLength: 100,
-      },
-      english: {
-        type: "string",
-        minLength: 1,
-        maxLength: 100,
-      },
-      difficulty: {
-        type: "string",
-        enum: [
-          "A2_BASIC",
-          "A2_INTERMEDIATE",
-          "B1_BASIC",
-          "B1_INTERMEDIATE",
-          "B1_ADVANCED",
+  type: "object",
+  properties: {
+    words: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          german: {
+            type: "string",
+            minLength: 1,
+            maxLength: 100,
+          },
+          english: {
+            type: "string",
+            minLength: 1,
+            maxLength: 100,
+          },
+          difficulty: {
+            type: "string",
+            enum: [
+              "A2_BASIC",
+              "A2_INTERMEDIATE",
+              "B1_BASIC",
+              "B1_INTERMEDIATE",
+              "B1_ADVANCED",
+            ],
+          },
+          category: {
+            type: "string",
+            minLength: 3,
+            maxLength: 50,
+          },
+          exampleSentence: {
+            type: "string",
+            minLength: 10,
+            maxLength: 300,
+          },
+        },
+        required: [
+          "german",
+          "english",
+          "difficulty",
+          "category",
+          "exampleSentence",
         ],
+        additionalProperties: false,
       },
-      category: {
-        type: "string",
-        minLength: 3,
-        maxLength: 50,
-      },
-      exampleSentence: {
-        type: "string",
-        minLength: 10,
-        maxLength: 300,
-      },
+      minItems: 1,
+      maxItems: 10,
     },
-    required: [
-      "german",
-      "english",
-      "difficulty",
-      "category",
-      "exampleSentence",
-    ],
-    additionalProperties: false,
   },
-  minItems: 1,
-  maxItems: 10,
+  required: ["words"],
+  additionalProperties: false,
 };
 
 export const ReadingExerciseSchema = {

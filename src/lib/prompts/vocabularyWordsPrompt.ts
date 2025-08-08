@@ -83,7 +83,7 @@ export function vocabularyWordsPrompt(
     contextualSettings[(seedNum + 19) % contextualSettings.length];
   const selectedUsage = usageEmphases[(seedNum + 31) % usageEmphases.length];
 
-  return `You are an expert German language curriculum creator AI. Your task is to generate a list of vocabulary words. Your response MUST be a single, valid JSON array.
+  return `You are an expert German language curriculum creator AI. Your task is to generate a list of vocabulary words. Your response MUST be a single, valid JSON object with a top-level property \"words\" (an array).
 
 Generate exactly ${count} high-frequency German vocabulary words for a ${difficulty} level learner.
 - Category Focus: ${categoryGuidance}
@@ -103,15 +103,17 @@ Each item in the list MUST adhere to the following strict requirements:
 4.  **The words MUST be appropriate** for the ${difficulty} level.
 5.  **The list MUST be original** and distinct from previous generations.
 
-The output MUST be a single, valid JSON array with the specified number of objects. Do NOT include any markdown, comments, or other text outside of the JSON.
-[
-  {
-    "german": "A German word or expression related to '${selectedTheme}'",
-    "english": "The accurate English translation",
-    "difficulty": "${difficulty}",
-    "category": "A word category reflecting the thematic focus",
-    "exampleSentence": "A natural German sentence demonstrating the word's usage in '${selectedSetting}' for '${selectedUsage}'."
-  }
-]
+The output MUST be a single, valid JSON object of the form below, and the array must contain exactly ${count} items. Do NOT include any markdown, comments, or other text outside of the JSON.
+{
+  "words": [
+    {
+      "german": "A German word or expression related to '${selectedTheme}'",
+      "english": "The accurate English translation",
+      "difficulty": "${difficulty}",
+      "category": "A word category reflecting the thematic focus",
+      "exampleSentence": "A natural German sentence demonstrating the word's usage in '${selectedSetting}' for '${selectedUsage}'."
+    }
+  ]
+}
 `;
 }

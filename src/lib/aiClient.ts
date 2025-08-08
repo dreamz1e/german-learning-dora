@@ -667,7 +667,10 @@ export async function generateVocabularyWords(
     const content = response.choices[0]?.message?.content;
     if (!content) throw new Error("No content generated");
 
-    const words = processAIResponse<VocabularyWord[]>(content);
+    const parsed = processAIResponse<{ words: VocabularyWord[] }>(content, [
+      "words",
+    ]);
+    const words = parsed.words;
 
     // Ensure difficulty is set correctly for all words
     words.forEach((word) => {
