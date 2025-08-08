@@ -199,9 +199,14 @@ export const ReadingExerciseSchema = {
 export const WritingExerciseSchema = {
   type: "object",
   properties: {
-    prompt: {
+    promptDe: {
       type: "string",
-      minLength: 20,
+      minLength: 10,
+      maxLength: 500,
+    },
+    promptEn: {
+      type: "string",
+      minLength: 10,
       maxLength: 500,
     },
     difficulty: {
@@ -222,9 +227,13 @@ export const WritingExerciseSchema = {
     guidelines: {
       type: "array",
       items: {
-        type: "string",
-        minLength: 10,
-        maxLength: 200,
+        type: "object",
+        properties: {
+          de: { type: "string", minLength: 5, maxLength: 200 },
+          en: { type: "string", minLength: 5, maxLength: 200 },
+        },
+        required: ["de", "en"],
+        additionalProperties: false,
       },
       minItems: 3,
       maxItems: 8,
@@ -241,7 +250,8 @@ export const WritingExerciseSchema = {
     },
   },
   required: [
-    "prompt",
+    "promptDe",
+    "promptEn",
     "difficulty",
     "topic",
     "guidelines",

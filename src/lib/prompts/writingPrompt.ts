@@ -84,29 +84,32 @@ export function createWritingPrompt(
 
   const difficultyGuidelines = {
     A2_BASIC: {
-      minWords: 50,
-      maxWords: 100,
-      complexity: "simple sentences, basic vocabulary, present tense",
+      minWords: 30,
+      maxWords: 80,
+      complexity: "very simple sentences, everyday vocabulary, present tense",
     },
     A2_INTERMEDIATE: {
-      minWords: 80,
-      maxWords: 150,
-      complexity: "compound sentences, past tense, common expressions",
+      minWords: 50,
+      maxWords: 120,
+      complexity:
+        "short compound sentences, familiar past tense forms, common phrases",
     },
     B1_BASIC: {
-      minWords: 120,
-      maxWords: 200,
-      complexity: "complex sentences, varied vocabulary, multiple tenses",
+      minWords: 70,
+      maxWords: 150,
+      complexity:
+        "mostly simple sentences with a few complex ones, varied common vocabulary",
     },
     B1_INTERMEDIATE: {
-      minWords: 150,
-      maxWords: 250,
-      complexity: "sophisticated structure, abstract concepts, register",
+      minWords: 90,
+      maxWords: 200,
+      complexity:
+        "mix of simple and complex sentences, some abstract ideas, appropriate register",
     },
     B1_ADVANCED: {
-      minWords: 200,
-      maxWords: 300,
-      complexity: "advanced vocabulary, cultural references, nuance",
+      minWords: 110,
+      maxWords: 220,
+      complexity: "clear structure, broader vocabulary, light nuance",
     },
   };
 
@@ -120,38 +123,39 @@ export function createWritingPrompt(
     descriptive: "detailed description of people, places, or events",
   };
 
-  return `You are an expert German language curriculum creator AI. Your task is to generate a unique writing exercise prompt. Your response MUST be a single, valid JSON object.
+  return `You are an encouraging German language tutor AI. Your task is to generate a simple, flexible writing exercise prompt. Your response MUST be a single, valid JSON object. Make the task bilingual using structured fields: provide separate German and English fields.
 
 Create a German writing exercise for a ${difficulty} level learner.
 - Topic: ${topicGuidance}
 - Type: ${exerciseTypes[exerciseType as keyof typeof exerciseTypes]}
 
-Variation Context (MUST be used to ensure uniqueness):
+Variation Context (use for inspiration to keep outputs varied):
 - Writing Context: ${selectedContext}
 - Target Audience: ${selectedAudience}
 - Writing Purpose: ${selectedPurpose}
 - Seed: ${variationSeed || "auto-generated"}
 
-You MUST use the variation context to design a unique prompt as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}.
+Use the variation context to design a unique prompt as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}. Keep the task open-ended and learner-friendly.
 
-The exercise MUST adhere to the following strict requirements:
-1.  **Provide a clear, engaging writing prompt** that is culturally relevant.
-2.  **Include 4-6 specific guidelines** to help structure the writing and focus the learner.
-3.  **Set an appropriate word count** (${guidelines.minWords}-${
+Please follow these learner-friendly requirements (keep it simple and flexible):
+1.  Provide a clear, friendly writing prompt in BOTH German and English using two fields: promptDe and promptEn (German is the primary prompt).
+2.  Include 3-4 short, optional suggestions to help structure ideas (not strict rules). Each suggestion MUST be an object with fields: { "de": "...", "en": "..." }.
+3.  Set a suggested word range (${guidelines.minWords}-${
     guidelines.maxWords
-  } words) and complexity level.
-4.  **The prompt MUST be original** and distinct from previous generations, inspired by the variation context.
+  } words) and note the expected complexity level: ${guidelines.complexity}.
+4.  Ensure the prompt is original and distinct from previous generations, taking inspiration from the variation context.
 
 The output MUST be a single, valid JSON object with the following structure. Do NOT include any markdown, comments, or other text outside of the JSON.
 {
-  "prompt": "A clear, engaging writing task designed as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}.",
+  "promptDe": "Eine klare, freundliche Schreibaufgabe als ${selectedContext} für ${selectedAudience} mit dem Zweck ${selectedPurpose}.",
+  "promptEn": "A clear, friendly writing task designed as a ${selectedContext} for ${selectedAudience} with the purpose of ${selectedPurpose}.",
   "difficulty": "${difficulty}",
   "topic": "A specific topic category reflecting the context.",
   "guidelines": [
-    "Guideline 1 for structuring the writing (context-specific).",
-    "Guideline 2 for content requirements (audience-specific).",
-    "Guideline 3 for grammar/vocabulary focus (purpose-specific).",
-    "Guideline 4 for style or tone (appropriate for context and audience)."
+    { "de": "Kurzer Starttipp (kontextbezogen).", "en": "Short suggestion to get started (context-specific)." },
+    { "de": "Hinweis, was enthalten sein könnte (zielgruppenbezogen).", "en": "Tip about what to include (audience-specific)." },
+    { "de": "Hilfreicher Sprachfokus (zweckbezogen, optional).", "en": "Helpful language focus (purpose-specific, optional)." },
+    { "de": "Hinweis zum Stil/Ton (optional).", "en": "Style/tone suggestion (optional)." }
   ],
   "minWords": ${guidelines.minWords},
   "maxWords": ${guidelines.maxWords}

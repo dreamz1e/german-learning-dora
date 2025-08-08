@@ -54,7 +54,8 @@ export interface ReadingExercise {
 }
 
 export interface WritingExercise {
-  prompt: string;
+  promptDe: string;
+  promptEn: string;
   difficulty:
     | "A2_BASIC"
     | "A2_INTERMEDIATE"
@@ -62,7 +63,7 @@ export interface WritingExercise {
     | "B1_INTERMEDIATE"
     | "B1_ADVANCED";
   topic: string;
-  guidelines: string[];
+  guidelines: Array<{ de: string; en: string }>;
   minWords: number;
   maxWords: number;
 }

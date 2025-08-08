@@ -817,7 +817,8 @@ export async function generateWritingExercise(
     if (!content) throw new Error("No content generated");
 
     const exercise = processAIResponse<WritingExercise>(content, [
-      "prompt",
+      "promptDe",
+      "promptEn",
       "difficulty",
       "topic",
       "guidelines",

@@ -7,11 +7,16 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { Progress } from "@/components/ui/Progress";
 
+interface BilingualGuideline {
+  de: string;
+  en: string;
+}
 interface WritingPrompt {
-  prompt: string;
+  promptDe: string;
+  promptEn: string;
   difficulty: string;
   topic: string;
-  guidelines: string[];
+  guidelines: BilingualGuideline[];
   minWords: number;
   maxWords: number;
 }
@@ -63,25 +68,17 @@ export function WritingExercise({
     .trim()
     .split(/\s+/)
     .filter((word) => word.length > 0).length;
-  const isValidLength =
+  const isWithinSuggestedRange =
     wordCount >= prompt.minWords && wordCount <= prompt.maxWords;
+  const meetsMinimum = wordCount >= 5 && text.trim().length >= 10; // align with API
 
   const handleSubmit = () => {
-    if (!isValidLength) {
+    if (!meetsMinimum) {
       addToast({
         type: "warning",
-        title: "Word Count",
-        message: `Please write between ${prompt.minWords} and ${prompt.maxWords} words.`,
-        duration: 3000,
-      });
-      return;
-    }
-
-    if (text.trim().length < 10) {
-      addToast({
-        type: "warning",
-        title: "Too Short",
-        message: "Please write more content before submitting.",
+        title: "Keep Going",
+        message:
+          "Try to write at least 5 words (10+ characters). The range is just a suggestion.",
         duration: 3000,
       });
       return;
@@ -110,20 +107,18 @@ export function WritingExercise({
   };
 
   const getWordCountColor = () => {
-    if (wordCount < prompt.minWords) return "text-red-600";
-    if (wordCount > prompt.maxWords) return "text-red-600";
-    if (wordCount >= prompt.minWords && wordCount <= prompt.maxWords)
-      return "text-green-600";
-    return "text-gray-600";
+    if (wordCount === 0) return "text-gray-600";
+    if (!isWithinSuggestedRange) return "text-yellow-600"; // below/above suggestion
+    return "text-green-600";
   };
 
   const handleEvaluate = async () => {
-    if (!isValidLength || text.trim().length < 10) {
+    if (!meetsMinimum) {
       addToast({
         type: "warning",
-        title: "Invalid Text",
+        title: "Not Enough Text",
         message:
-          "Please ensure your text meets the requirements before evaluation.",
+          "Please write at least 5 words (10+ characters) before evaluation.",
         duration: 3000,
       });
       return;
@@ -139,7 +134,7 @@ export function WritingExercise({
         body: JSON.stringify({
           text: text.trim(),
           difficulty: prompt.difficulty,
-          originalPrompt: prompt.prompt,
+          originalPrompt: `DE: ${prompt.promptDe}\nEN: ${prompt.promptEn}`,
         }),
       });
 
@@ -244,9 +239,12 @@ export function WritingExercise({
           <CardTitle className="text-lg">Your Writing Task</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded-r-lg">
+          <div className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded-r-lg space-y-1">
             <p className="text-pink-900 font-medium leading-relaxed">
-              {prompt.prompt}
+              {prompt.promptDe}
+            </p>
+            <p className="text-pink-900/80 italic text-sm leading-relaxed">
+              {prompt.promptEn}
             </p>
           </div>
 
@@ -257,19 +255,26 @@ export function WritingExercise({
               {prompt.guidelines.map((guideline, index) => (
                 <li
                   key={index}
-                  className="flex items-start space-x-2 text-sm text-gray-600"
+                  className="flex items-start space-x-2 text-sm bg-white/90 border border-gray-200 rounded-md p-2"
                 >
-                  <span className="text-pink-500 mt-1">•</span>
-                  <span>{guideline}</span>
+                  <span className="text-pink-600 mt-1">•</span>
+                  <span>
+                    <span className="block text-gray-900 font-medium">
+                      {guideline.de}
+                    </span>
+                    <span className="block italic text-gray-600 text-xs">
+                      {guideline.en}
+                    </span>
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Word Count Requirements */}
+          {/* Word Count Guidance */}
           <div className="bg-gray-50 p-3 rounded-lg">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-700">Required word count:</span>
+              <span className="text-gray-700">Suggested word count:</span>
               <span className="font-medium text-gray-800">
                 {prompt.minWords} - {prompt.maxWords} words
               </span>
@@ -287,9 +292,11 @@ export function WritingExercise({
               <span className={`text-sm font-medium ${getWordCountColor()}`}>
                 {wordCount} words
               </span>
-              {!isValidLength && wordCount > 0 && (
-                <span className="text-xs text-red-600">
-                  {wordCount < prompt.minWords ? "Too short" : "Too long"}
+              {!isWithinSuggestedRange && wordCount > 0 && (
+                <span className="text-xs text-yellow-700">
+                  {wordCount < prompt.minWords
+                    ? "Below suggested range"
+                    : "Above suggested range"}
                 </span>
               )}
             </div>
@@ -319,11 +326,11 @@ export function WritingExercise({
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    isValidLength
+                    isWithinSuggestedRange
                       ? "bg-green-500"
                       : wordCount === 0
                       ? "bg-gray-300"
-                      : "bg-red-500"
+                      : "bg-yellow-500"
                   }`}
                   style={{
                     width: `${Math.min(
@@ -334,8 +341,8 @@ export function WritingExercise({
                 />
               </div>
               <div className="flex justify-between text-xs text-gray-500">
-                <span>{prompt.minWords} min</span>
-                <span>{prompt.maxWords} max</span>
+                <span>{prompt.minWords} suggested min</span>
+                <span>{prompt.maxWords} suggested max</span>
               </div>
             </div>
 
@@ -345,9 +352,7 @@ export function WritingExercise({
                 <>
                   <Button
                     onClick={handleEvaluate}
-                    disabled={
-                      !isValidLength || text.trim().length < 10 || isEvaluating
-                    }
+                    disabled={!meetsMinimum || isEvaluating}
                     size="lg"
                     variant="outline"
                     className="min-w-32 relative"
@@ -366,7 +371,7 @@ export function WritingExercise({
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={!isValidLength || text.trim().length < 10}
+                    disabled={!meetsMinimum}
                     size="lg"
                     className="min-w-32"
                   >
