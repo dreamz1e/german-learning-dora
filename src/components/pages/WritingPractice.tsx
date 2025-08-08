@@ -8,11 +8,17 @@ import { Badge } from "@/components/ui/Badge";
 import { WritingExercise } from "@/components/exercises/WritingExercise";
 import { useToast } from "@/components/ui/Toast";
 
+interface BilingualGuideline {
+  de: string;
+  en: string;
+}
+
 interface WritingPrompt {
-  prompt: string;
+  promptDe: string;
+  promptEn: string;
   difficulty: string;
   topic: string;
-  guidelines: string[];
+  guidelines: BilingualGuideline[];
   minWords: number;
   maxWords: number;
 }
@@ -104,31 +110,29 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
 
   const handleWritingComplete = async (
     wordCount: number,
-    timeSpent: number
+    timeSpent: number,
+    evaluationScore?: number
   ) => {
     if (!user || !currentPrompt) return;
 
     try {
-      // Calculate XP based on word count and difficulty
-      let baseXP = 30;
-      const difficultyMultiplier =
-        {
-          A2_BASIC: 1.0,
-          A2_INTERMEDIATE: 1.2,
-          B1_BASIC: 1.4,
-          B1_INTERMEDIATE: 1.6,
-          B1_ADVANCED: 1.8,
-        }[currentPrompt.difficulty] || 1.0;
+      if (
+        typeof evaluationScore !== "number" ||
+        !Number.isFinite(evaluationScore)
+      ) {
+        // If no evaluation score is available, skip XP award
+        return;
+      }
 
-      const wordBonus = Math.min(Math.floor(wordCount / 20), 20); // Bonus for length, max 20
-      const finalXP = Math.round((baseXP + wordBonus) * difficultyMultiplier);
+      // XP based on evaluation overall score * 0.5
+      const finalXP = Math.max(1, Math.round(evaluationScore * 0.5));
 
       await fetch("/api/gamification/award-xp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: finalXP,
-          reason: `Writing practice: ${currentPrompt.topic}`,
+          reason: `Writing practice (score-based): ${currentPrompt.topic}`,
           category: "EXERCISE",
         }),
       });
@@ -136,7 +140,7 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
       addToast({
         type: "success",
         title: "Writing Complete!",
-        message: `You earned ${finalXP} XP for your writing! (${wordCount} words)`,
+        message: `You earned ${finalXP} XP! Overall score: ${evaluationScore}/100`,
         duration: 5000,
       });
     } catch (error) {

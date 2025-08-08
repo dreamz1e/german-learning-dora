@@ -47,8 +47,12 @@ interface WritingEvaluation {
 
 interface WritingExerciseProps {
   prompt: WritingPrompt;
-  onComplete: (wordCount: number, timeSpent: number) => void;
-  onNewPrompt: () => void;
+  onComplete: (
+    wordCount: number,
+    timeSpent: number,
+    evaluationScore?: number
+  ) => void;
+  onNewPrompt: () => Promise<void> | void;
 }
 
 export function WritingExercise({
@@ -62,6 +66,7 @@ export function WritingExercise({
   const [evaluation, setEvaluation] = useState<WritingEvaluation | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [showEvaluation, setShowEvaluation] = useState(false);
+  const [isLoadingNext, setIsLoadingNext] = useState(false);
   const { addToast } = useToast();
 
   const wordCount = text
@@ -72,7 +77,7 @@ export function WritingExercise({
     wordCount >= prompt.minWords && wordCount <= prompt.maxWords;
   const meetsMinimum = wordCount >= 5 && text.trim().length >= 10; // align with API
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!meetsMinimum) {
       addToast({
         type: "warning",
@@ -86,7 +91,15 @@ export function WritingExercise({
 
     const timeSpent = Math.round((Date.now() - startTime) / 1000);
     setIsSubmitted(true);
-    onComplete(wordCount, timeSpent);
+    // Trigger evaluation (or reuse existing) and pass score to onComplete
+    let evalResult = evaluation;
+    if (!evalResult) {
+      evalResult = await handleEvaluate();
+    } else {
+      setShowEvaluation(true);
+    }
+
+    onComplete(wordCount, timeSpent, evalResult?.overallScore);
 
     addToast({
       type: "success",
@@ -96,10 +109,16 @@ export function WritingExercise({
     });
   };
 
-  const handleNewPrompt = () => {
+  const handleNewPrompt = async () => {
+    if (isEvaluating || isLoadingNext) return; // prevent navigating while evaluating or already loading
     setText("");
     setIsSubmitted(false);
-    onNewPrompt();
+    try {
+      setIsLoadingNext(true);
+      await onNewPrompt();
+    } finally {
+      setIsLoadingNext(false);
+    }
   };
 
   const getDifficultyText = (diff: string) => {
@@ -112,7 +131,7 @@ export function WritingExercise({
     return "text-green-600";
   };
 
-  const handleEvaluate = async () => {
+  const handleEvaluate = async (): Promise<WritingEvaluation | null> => {
     if (!meetsMinimum) {
       addToast({
         type: "warning",
@@ -121,7 +140,7 @@ export function WritingExercise({
           "Please write at least 5 words (10+ characters) before evaluation.",
         duration: 3000,
       });
-      return;
+      return null;
     }
 
     setIsEvaluating(true);
@@ -152,6 +171,8 @@ export function WritingExercise({
         message: `Overall score: ${data.evaluation.overallScore}/100`,
         duration: 4000,
       });
+
+      return data.evaluation as WritingEvaluation;
     } catch (error) {
       console.error("Evaluation error:", error);
       addToast({
@@ -160,6 +181,7 @@ export function WritingExercise({
         message: "Unable to evaluate your writing. Please try again.",
         duration: 4000,
       });
+      return null;
     } finally {
       setIsEvaluating(false);
     }
@@ -371,7 +393,7 @@ export function WritingExercise({
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={!meetsMinimum}
+                    disabled={!meetsMinimum || isEvaluating}
                     size="lg"
                     className="min-w-32"
                   >
@@ -379,13 +401,28 @@ export function WritingExercise({
                   </Button>
                 </>
               ) : (
-                <div className="flex space-x-4">
+                <div className="flex items-center space-x-4">
+                  {(isEvaluating || isLoadingNext) && (
+                    <div className="flex items-center text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
+                      <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+                      <span>
+                        {isEvaluating
+                          ? "AI is evaluating your writing. Please wait..."
+                          : "Loading next task..."}
+                      </span>
+                    </div>
+                  )}
                   <Button
                     onClick={handleNewPrompt}
                     size="lg"
                     className="min-w-32"
+                    disabled={isEvaluating || isLoadingNext}
                   >
-                    New Writing Task
+                    {isLoadingNext
+                      ? "Loading..."
+                      : isEvaluating
+                      ? "Evaluating..."
+                      : "Next Task"}
                   </Button>
                 </div>
               )}
@@ -399,6 +436,15 @@ export function WritingExercise({
         <Card className="bg-pink-50 border-pink-200">
           <CardContent className="p-6">
             <div className="space-y-3">
+              {isEvaluating && (
+                <div className="flex items-center text-blue-800 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
+                  <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+                  <span>
+                    Evaluating your writing with AI. This may take a few
+                    seconds…
+                  </span>
+                </div>
+              )}
               <h3 className="font-semibold text-pink-900 flex items-center space-x-2">
                 <span className="text-xl">🎉</span>
                 <span>Writing Completed!</span>
