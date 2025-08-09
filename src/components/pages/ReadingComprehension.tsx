@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { TipsPanel } from "@/components/ui/TipsPanel";
 import { Badge } from "@/components/ui/Badge";
 import { ReadingExercise } from "@/components/exercises/ReadingExercise";
 import { useToast } from "@/components/ui/Toast";
@@ -341,47 +342,26 @@ export function ReadingComprehension({
         </div>
       )}
 
-      {/* Tips and Information */}
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-purple-700">
-            <span className="text-xl">💡</span>
-            <span>Reading Comprehension Tips</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-purple-600">
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>👀</span>
-                <span>Read the text completely before answering questions</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>🔍</span>
-                <span>Look for keywords that match the questions</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>📝</span>
-                <span>Don't worry about understanding every word</span>
-              </li>
-            </ul>
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>🧠</span>
-                <span>Use context clues to understand new vocabulary</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>⭐</span>
-                <span>XP based on score: 90%+ = 50 XP, 70%+ = 40 XP</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>📚</span>
-                <span>Regular reading improves overall German skills</span>
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <TipsPanel
+        title="Reading Comprehension Tips"
+        tone="purple"
+        sections={[
+          {
+            items: [
+              "Read the text completely before answering questions",
+              "Look for keywords that match the questions",
+              "Don't worry about understanding every word",
+            ],
+          },
+          {
+            items: [
+              "Use context clues to understand new vocabulary",
+              "XP based on score: 90%+ = 50 XP, 70%+ = 40 XP",
+              "Regular reading improves overall German skills",
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }

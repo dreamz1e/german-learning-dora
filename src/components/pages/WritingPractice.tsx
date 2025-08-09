@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { TipsPanel } from "@/components/ui/TipsPanel";
 import { Badge } from "@/components/ui/Badge";
 import { WritingExercise } from "@/components/exercises/WritingExercise";
 import { useToast } from "@/components/ui/Toast";
@@ -366,53 +367,26 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
         </div>
       )}
 
-      {/* Tips and Information */}
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-purple-700">
-            <span className="text-xl">💡</span>
-            <span>Writing Practice Tips</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-purple-600">
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>📝</span>
-                <span>Start with simple sentences and build complexity</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>🧠</span>
-                <span>Use vocabulary and grammar from your current level</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>🔍</span>
-                <span>
-                  Review your writing for common errors before submitting
-                </span>
-              </li>
-            </ul>
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>⏰</span>
-                <span>
-                  Take your time - quality is more important than speed
-                </span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>⭐</span>
-                <span>XP increases with difficulty and word count</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>🎯</span>
-                <span>
-                  Follow the guidelines to structure your writing effectively
-                </span>
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <TipsPanel
+        title="Writing Practice Tips"
+        tone="purple"
+        sections={[
+          {
+            items: [
+              "Start with simple sentences and build complexity",
+              "Use vocabulary and grammar from your current level",
+              "Review your writing for common errors before submitting",
+            ],
+          },
+          {
+            items: [
+              "Take your time - quality is more important than speed",
+              "XP increases with difficulty and word count",
+              "Follow the guidelines to structure your writing effectively",
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }

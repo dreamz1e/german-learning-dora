@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { TipsPanel } from "@/components/ui/TipsPanel";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { useToast } from "@/components/ui/Toast";
@@ -933,47 +934,24 @@ export function DailyChallenge({ onNavigate }: DailyChallengeProps) {
         </div>
       </div>
 
-      {/* Tips & Motivation */}
-      <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-indigo-700">
-            <span className="text-2xl">💡</span>
-            <span>Daily Challenge Tips</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-indigo-700">
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <span className="text-xl">🎯</span>
-                <span className="font-medium">
-                  Complete all tasks to maximize your XP and earn bonus rewards
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-xl">🔥</span>
-                <span className="font-medium">
-                  Daily completion maintains your learning streak
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <span className="text-xl">⚡</span>
-                <span className="font-medium">
-                  Longer streaks unlock higher XP multipliers
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-xl">🏆</span>
-                <span className="font-medium">
-                  Consistent practice unlocks achievements and badges
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <TipsPanel
+        title="Daily Challenge Tips"
+        tone="indigo"
+        sections={[
+          {
+            items: [
+              "Complete all tasks to maximize your XP and earn bonus rewards",
+              "Daily completion maintains your learning streak",
+            ],
+          },
+          {
+            items: [
+              "Longer streaks unlock higher XP multipliers",
+              "Consistent practice unlocks achievements and badges",
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }
