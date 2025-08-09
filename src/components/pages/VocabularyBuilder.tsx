@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ExerciseContainer } from "@/components/exercises/ExerciseContainer";
 import { useToast } from "@/components/ui/Toast";
 import { ExerciseResult } from "@/components/exercises/ExerciseSummary";
+import { TipsPanel } from "@/components/ui/TipsPanel";
 
 interface VocabularyWord {
   german: string;
@@ -782,47 +783,26 @@ export function VocabularyBuilder({
         </div>
       )}
 
-      {/* Tips */}
-      <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-green-700">
-            <span className="text-xl">💡</span>
-            <span>Vocabulary Learning Tips</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-green-600">
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>📝</span>
-                <span>Practice exercises test your recognition skills</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>📚</span>
-                <span>Study mode helps you learn new words with context</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>🔄</span>
-                <span>Review words regularly for better retention</span>
-              </li>
-            </ul>
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>💭</span>
-                <span>Create your own sentences with new words</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>⭐</span>
-                <span>Exercise: 20 XP correct, 8 XP attempt</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>📖</span>
-                <span>Study mode: 5 XP per session</span>
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <TipsPanel
+        title="Vocabulary Learning Tips"
+        tone="emerald"
+        sections={[
+          {
+            items: [
+              "Practice exercises test your recognition skills",
+              "Study mode helps you learn new words with context",
+              "Review words regularly for better retention",
+            ],
+          },
+          {
+            items: [
+              "Create your own sentences with new words",
+              "Exercise: 20 XP correct, 8 XP attempt",
+              "Study mode: 5 XP per session",
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }

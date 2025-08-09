@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ExerciseContainer } from "@/components/exercises/ExerciseContainer";
 import { useToast } from "@/components/ui/Toast";
 import { ExerciseResult } from "@/components/exercises/ExerciseSummary";
+import { TipsPanel } from "@/components/ui/TipsPanel";
 
 interface GrammarExercise {
   type: string;
@@ -547,50 +548,26 @@ export function GrammarPractice({ onNavigate }: GrammarPracticeProps = {}) {
       )}
 
       {/* Tips and Information */}
-      <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-pink-700">
-            <span className="text-xl">💡</span>
-            <span>Grammar Practice Tips</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-pink-600">
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>🎯</span>
-                <span>Start with A2 Basic if you're new to German grammar</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>📚</span>
-                <span>
-                  Focus on one grammar topic at a time for better retention
-                </span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>🔄</span>
-                <span>Practice regularly - even 10 minutes daily helps</span>
-              </li>
-            </ul>
-            <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <span>✍️</span>
-                <span>Read explanations carefully to understand the rules</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>⭐</span>
-                <span>
-                  You earn 25 XP for correct answers, 10 XP for attempts
-                </span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span>🏆</span>
-                <span>Track your progress in the achievements section</span>
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <TipsPanel
+        title="Grammar Practice Tips"
+        tone="pink"
+        sections={[
+          {
+            items: [
+              "Start with A2 Basic if you're new to German grammar",
+              "Focus on one grammar topic at a time for better retention",
+              "Practice regularly - even 10 minutes daily helps",
+            ],
+          },
+          {
+            items: [
+              "Read explanations carefully to understand the rules",
+              "You earn 25 XP for correct answers, 10 XP for attempts",
+              "Track your progress in the achievements section",
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }
