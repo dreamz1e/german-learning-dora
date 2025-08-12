@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { TipsPanel } from "@/components/ui/TipsPanel";
 import { Badge } from "@/components/ui/Badge";
 import { SentenceConstructionExercise } from "@/components/exercises/SentenceConstructionExercise";
 import { ErrorCorrectionExercise } from "@/components/exercises/ErrorCorrectionExercise";
@@ -464,55 +465,28 @@ export function AdvancedExercises({ onNavigate }: AdvancedExercisesProps = {}) {
         </div>
       )}
 
-      {/* Tips and Information */}
-      <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-indigo-700">
-            <span className="text-xl">💡</span>
-            <span>Advanced Exercise Tips</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-indigo-600">
-            <div className="space-y-3">
-              <h4 className="font-semibold">Sentence Construction:</h4>
-              <ul className="space-y-2">
-                <li className="flex items-start space-x-2">
-                  <span>🔧</span>
-                  <span>Think about German word order rules</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span>📚</span>
-                  <span>Consider which case each noun should be in</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span>⭐</span>
-                  <span>35 XP for correct, 15 XP for attempts</span>
-                </li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-semibold">Error Correction:</h4>
-              <ul className="space-y-2">
-                <li className="flex items-start space-x-2">
-                  <span>🔍</span>
-                  <span>
-                    Look for common mistakes: cases, verb forms, agreements
-                  </span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span>🎯</span>
-                  <span>Click on words that seem incorrect</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span>⭐</span>
-                  <span>20-50 XP based on accuracy percentage</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <TipsPanel
+        title="Advanced Exercise Tips"
+        tone="indigo"
+        sections={[
+          {
+            heading: "Sentence Construction:",
+            items: [
+              "Think about German word order rules",
+              "Consider which case each noun should be in",
+              "35 XP for correct, 15 XP for attempts",
+            ],
+          },
+          {
+            heading: "Error Correction:",
+            items: [
+              "Look for common mistakes: cases, verb forms, agreements",
+              "Click on words that seem incorrect",
+              "20-50 XP based on accuracy percentage",
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }
