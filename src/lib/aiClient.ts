@@ -640,7 +640,13 @@ export async function generateListeningExercise(
   let attempt = 0;
   while (attempt < maxRetries) {
     try {
-      const selectedTopic = topic || selectRandomTopic(listeningTopics);
+      // Sanitize topic to mitigate prompt-injection attempts and enforce length
+      const sanitized = (topic || "")
+        .normalize("NFKC")
+        .replace(/[^\p{L}\p{N}\s\-&']/gu, "")
+        .slice(0, 50)
+        .trim();
+      const selectedTopic = sanitized || selectRandomTopic(listeningTopics);
       const variationSeed = ContentTracker.generateVariationSeed(
         userId,
         "listening",

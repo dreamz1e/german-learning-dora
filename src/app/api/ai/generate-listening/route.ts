@@ -3,6 +3,12 @@ import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 import { generateListeningExercise } from "@/lib/aiClient";
 
+const sanitizedTopic = z
+  .string()
+  .trim()
+  .max(50)
+  .regex(/^[\p{L}\p{N}\s\-&']*$/u, "Invalid characters in topic");
+
 const generateListeningSchema = z.object({
   difficulty: z.enum([
     "A2_BASIC",
@@ -11,7 +17,7 @@ const generateListeningSchema = z.object({
     "B1_INTERMEDIATE",
     "B1_ADVANCED",
   ]),
-  topic: z.string().optional(),
+  topic: sanitizedTopic.optional().nullable(),
 });
 
 export const POST = withAuth(
@@ -19,10 +25,11 @@ export const POST = withAuth(
     try {
       const body = await request.json();
       const { difficulty, topic } = generateListeningSchema.parse(body);
+      const safeTopic = topic && topic.length > 0 ? topic : undefined;
 
       const exercise = await generateListeningExercise(
         difficulty,
-        topic,
+        safeTopic,
         userId
       );
 
