@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -43,6 +43,19 @@ export function ReadingExercise({
     y: number;
   } | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+
+  // Shuffle options per question once per questions payload
+  const shuffledOptionsByQuestion = useMemo(() => {
+    if (!questions || questions.length === 0) return [] as string[][];
+    return questions.map((q) => {
+      const shuffled = [...(q.options || [])];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    });
+  }, [questions]);
 
   const requestTranslation = async (
     word: string,
@@ -209,7 +222,7 @@ export function ReadingExercise({
 
               {/* Answer Options */}
               <div className="space-y-3">
-                {questions[currentQuestion]?.options.map(
+                {shuffledOptionsByQuestion[currentQuestion]?.map(
                   (option, optionIndex) => (
                     <button
                       key={optionIndex}
