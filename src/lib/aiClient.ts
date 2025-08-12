@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { vocabularyPrompt } from "./prompts/vocabularyPrompt";
 import { grammarPrompt } from "./prompts/grammarPrompt";
 import { readingPrompt } from "./prompts/readingPrompt";
+import { listeningPrompt } from "./prompts/listeningPrompt";
 import { vocabularyWordsPrompt } from "./prompts/vocabularyWordsPrompt";
 import { translationPrompt } from "./prompts/translationPrompt";
 import { createWritingPrompt } from "./prompts/writingPrompt";
@@ -15,9 +16,11 @@ import {
   VocabularyWordsSchema,
   ReadingExerciseSchema,
   WritingExerciseSchema,
+  ListeningExerciseSchema,
   SentenceConstructionSchema,
   ErrorCorrectionSchema,
   WritingEvaluationSchema,
+  ListeningEvaluationSchema,
   BatchGrammarExercisesSchema,
   BatchVocabularyExercisesSchema,
 } from "./schemas";
@@ -30,12 +33,14 @@ import {
   BatchExercises,
   GermanExercise,
   ReadingExercise,
+  ListeningExercise,
   VocabularyWord,
   WritingExercise,
   SentenceConstructionExercise,
   ErrorCorrectionExercise,
   WritingEvaluation,
   WritingEvaluationError,
+  listeningTopics,
 } from "@/types/exerciseTypes";
 
 // Configure OpenAI client for OpenRouter
@@ -46,6 +51,7 @@ const openai = new OpenAI({
 
 const model = "openai/gpt-4.1";
 const evaluationModel = "anthropic/claude-sonnet-4"; // Better for structured output
+const ttsModel = "gpt-4o-mini-tts";
 
 // In-memory exercise cycle managers (in production, this would be stored in database)
 const exerciseCycleManagers = new Map<string, ExerciseCycleManager>();
@@ -623,6 +629,158 @@ export async function generateReadingExercise(
   }
 
   throw new Error("Failed to generate reading exercise");
+}
+
+export async function generateListeningExercise(
+  difficulty: string,
+  topic?: string,
+  userId: string = "anonymous"
+): Promise<ListeningExercise> {
+  const maxRetries = 3;
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      // Sanitize topic to mitigate prompt-injection attempts and enforce length
+      const sanitized = (topic || "")
+        .normalize("NFKC")
+        .replace(/[^\p{L}\p{N}\s\-&']/gu, "")
+        .slice(0, 50)
+        .trim();
+      const selectedTopic = sanitized || selectRandomTopic(listeningTopics);
+      const variationSeed = ContentTracker.generateVariationSeed(
+        userId,
+        "listening",
+        difficulty,
+        selectedTopic
+      );
+
+      const response = await openai.chat.completions.create({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: listeningPrompt(difficulty, selectedTopic, variationSeed),
+          },
+        ],
+        temperature: Math.min(0.9 + attempt * 0.1, 1),
+        max_tokens: 600,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "german_listening_exercise",
+            schema: ListeningExerciseSchema,
+          },
+        },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("No content generated");
+
+      const exercise = processAIResponse<ListeningExercise>(content, [
+        "transcript",
+        "topic",
+        "difficulty",
+        "hint",
+      ]);
+
+      // Deduplicate against recent transcripts
+      const key = `${exercise.transcript.slice(0, 80)}-${selectedTopic}`;
+      if (ContentTracker.isDuplicate(key) && attempt < maxRetries - 1) {
+        console.log(
+          `Duplicate listening content detected on attempt ${
+            attempt + 1
+          }, retrying...`
+        );
+        attempt++;
+        continue;
+      }
+
+      exercise.difficulty = difficulty as any;
+      ContentTracker.trackContent(key);
+      return exercise;
+    } catch (error) {
+      console.error(
+        `Error generating listening exercise on attempt ${attempt + 1}:`,
+        error
+      );
+      attempt++;
+      if (attempt >= maxRetries) {
+        throw new Error("Failed to generate listening exercise after retries");
+      }
+    }
+  }
+  throw new Error("Failed to generate listening exercise");
+}
+
+export async function synthesizeListeningAudio(
+  transcript: string
+): Promise<Uint8Array> {
+  // Use OpenRouter compatible TTS if available; otherwise, OpenAI SDK supports speech.synthesize in >=4
+  // With openai SDK v5, we can use audio.speech.create
+  const directOpenAI = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const speech = await directOpenAI.audio.speech.create({
+    model: ttsModel,
+    voice: "alloy",
+    input: transcript,
+    format: "mp3",
+  } as any);
+  const arrayBuffer = await speech.arrayBuffer();
+  return new Uint8Array(arrayBuffer);
+}
+
+export async function evaluateListening(
+  userTranscript: string,
+  referenceTranscript: string,
+  difficulty: string
+) {
+  // Lightweight evaluation with LLM for qualitative feedback + JSON schema
+  const evaluationPrompt = `You are evaluating a German listening transcription. Compare the student's transcription to the reference.
+
+Reference:
+"""
+${referenceTranscript}
+"""
+
+Student:
+"""
+${userTranscript}
+"""
+
+Tasks:
+- Compute similarity 0–100 (token overlap and semantic similarity, prioritize exact words)
+- Compute word error rate (0.0–1.0) approx based on insertions, deletions, substitutions
+- Provide correctedText that minimally edits Student to match Reference
+- Indicate exactMatch true/false
+- Provide 2–4 bullet feedback sentences in English about typical mistakes (umlauts, capitalization, word order)
+- Extract up to 10 mismatches with type (omission, insertion, substitution), expected, actual, and a short explanation
+
+Return a single JSON following this schema strictly.`;
+
+  const response = await openai.chat.completions.create({
+    model: evaluationModel,
+    messages: [{ role: "user", content: evaluationPrompt }],
+    temperature: 0.2,
+    max_tokens: 1200,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "listening_evaluation",
+        schema: ListeningEvaluationSchema,
+      },
+    },
+  });
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error("No evaluation content");
+  const result = processAIResponse<any>(content, [
+    "score",
+    "similarity",
+    "wordErrorRate",
+    "exactMatch",
+    "correctedText",
+    "feedback",
+  ]);
+  result.difficulty = difficulty as any;
+  return result;
 }
 
 export async function generateVocabularyWords(
