@@ -68,6 +68,20 @@ export interface WritingExercise {
   maxWords: number;
 }
 
+export interface ListeningExercise {
+  transcript: string;
+  topic: string;
+  difficulty:
+    | "A2_BASIC"
+    | "A2_INTERMEDIATE"
+    | "B1_BASIC"
+    | "B1_INTERMEDIATE"
+    | "B1_ADVANCED";
+  hint: string;
+  // generated TTS audio URL for playback
+  audioUrl?: string;
+}
+
 export interface SentenceConstructionExercise {
   instruction: string;
   correctSentence: string;
@@ -189,4 +203,19 @@ export const grammarTopics = [
   "Passive Voice & Reflexive Verbs",
   "Conditional & Subjunctive",
   "Questions & Negation",
+];
+
+export const listeningTopics = [
+  "Everyday Conversations",
+  "Public Announcements",
+  "Travel & Transportation",
+  "Shopping & Orders",
+  "Appointments & Schedules",
+  "Weather & Small Talk",
+  "School & University",
+  "Work & Office",
+  "Health & Pharmacy",
+  "Cafés & Restaurants",
+  "Hobbies & Leisure",
+  "Neighborhood & Directions",
 ];

@@ -196,6 +196,39 @@ export const ReadingExerciseSchema = {
   additionalProperties: false,
 };
 
+export const ListeningExerciseSchema = {
+  type: "object",
+  properties: {
+    transcript: {
+      type: "string",
+      minLength: 6,
+      maxLength: 300,
+    },
+    topic: {
+      type: "string",
+      minLength: 3,
+      maxLength: 100,
+    },
+    difficulty: {
+      type: "string",
+      enum: [
+        "A2_BASIC",
+        "A2_INTERMEDIATE",
+        "B1_BASIC",
+        "B1_INTERMEDIATE",
+        "B1_ADVANCED",
+      ],
+    },
+    hint: {
+      type: "string",
+      minLength: 5,
+      maxLength: 150,
+    },
+  },
+  required: ["transcript", "topic", "difficulty", "hint"],
+  additionalProperties: false,
+};
+
 export const WritingExerciseSchema = {
   type: "object",
   properties: {
@@ -495,6 +528,66 @@ export const WritingEvaluationSchema = {
     "difficulty",
     "wordCount",
   ],
+};
+
+export const ListeningEvaluationSchema = {
+  type: "object",
+  properties: {
+    score: {
+      type: "integer",
+      minimum: 0,
+      maximum: 100,
+    },
+    similarity: {
+      type: "integer",
+      minimum: 0,
+      maximum: 100,
+    },
+    wordErrorRate: {
+      type: "number",
+      minimum: 0,
+      maximum: 1,
+    },
+    exactMatch: {
+      type: "boolean",
+    },
+    correctedText: {
+      type: "string",
+    },
+    feedback: {
+      type: "string",
+    },
+    errors: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          type: { type: "string" },
+          expected: { type: "string" },
+          actual: { type: "string" },
+          explanation: { type: "string" },
+        },
+        required: ["type", "expected", "actual", "explanation"],
+        additionalProperties: false,
+      },
+      minItems: 0,
+      maxItems: 20,
+    },
+    difficulty: {
+      type: "string",
+    },
+  },
+  required: [
+    "score",
+    "similarity",
+    "wordErrorRate",
+    "exactMatch",
+    "correctedText",
+    "feedback",
+    "errors",
+    "difficulty",
+  ],
+  additionalProperties: false,
 };
 
 // Batch Exercise Generation Schemas

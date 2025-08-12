@@ -8,6 +8,7 @@ import { DailyChallenge } from "@/components/pages/DailyChallenge";
 import { GrammarPractice } from "@/components/pages/GrammarPractice";
 import { VocabularyBuilder } from "@/components/pages/VocabularyBuilder";
 import { ReadingComprehension } from "@/components/pages/ReadingComprehension";
+import { ListeningPractice } from "@/components/pages/ListeningPractice";
 import { WritingPractice } from "@/components/pages/WritingPractice";
 import { AdvancedExercises } from "@/components/pages/AdvancedExercises";
 import { Achievements } from "@/components/pages/Achievements";
@@ -32,6 +33,8 @@ export function Dashboard() {
         return <VocabularyBuilder onNavigate={setCurrentPage} />;
       case "reading":
         return <ReadingComprehension onNavigate={setCurrentPage} />;
+      case "listening":
+        return <ListeningPractice onNavigate={setCurrentPage} />;
       case "writing":
         return <WritingPractice onNavigate={setCurrentPage} />;
       case "advanced":
