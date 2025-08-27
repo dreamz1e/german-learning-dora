@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { ListeningExercise as ListeningExerciseType } from "@/types/exerciseTypes";
+import {
+  ListeningExercise as ListeningExerciseType,
+  ListeningEvaluation,
+} from "@/types/exerciseTypes";
 
 interface Props {
   exercise: ListeningExerciseType;
@@ -19,6 +22,12 @@ export default function ListeningExercise({ exercise, onComplete }: Props) {
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
+  const [evaluation, setEvaluation] = useState<ListeningEvaluation | null>(
+    null
+  );
+  const [evaluatedTimeSpent, setEvaluatedTimeSpent] = useState<number | null>(
+    null
+  );
   const { addToast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const progressCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -228,13 +237,14 @@ export default function ListeningExercise({ exercise, onComplete }: Props) {
       const data = await response.json();
       const score = data.evaluation?.score ?? 0;
       const timeSpent = Math.round((Date.now() - startTime) / 1000);
+      setEvaluation(data.evaluation as ListeningEvaluation);
+      setEvaluatedTimeSpent(timeSpent);
       addToast({
         type: "success",
         title: "Evaluated",
         message: `Score: ${score}/100`,
         duration: 4000,
       });
-      onComplete(score, timeSpent);
     } catch (e) {
       console.error(e);
       addToast({
@@ -299,21 +309,87 @@ export default function ListeningExercise({ exercise, onComplete }: Props) {
         <div className="text-xs text-muted-foreground">
           Hint: {exercise.hint}
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Type what you heard (German)
-          </label>
-          <Input
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Ich höre ..."
-          />
-        </div>
-        <div className="flex gap-3">
-          <Button onClick={handleEvaluate} disabled={isSubmitting}>
-            {isSubmitting ? "Evaluating..." : "Submit"}
-          </Button>
-        </div>
+        {!evaluation ? (
+          <>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Type what you heard (German)
+              </label>
+              <Input
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="Ich höre ..."
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={handleEvaluate} disabled={isSubmitting}>
+                {isSubmitting ? "Evaluating..." : "Submit"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="rounded-md border p-3 bg-card/60 space-y-2">
+              <div className="text-sm font-medium">
+                Result: {evaluation.score}/100 • Similarity{" "}
+                {evaluation.similarity}%
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {evaluation.feedback}
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Correct answer</div>
+                <div className="text-sm bg-muted/50 rounded p-2">
+                  {evaluation.correctedText}
+                </div>
+              </div>
+              {evaluation.errors && evaluation.errors.length > 0 && (
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">Your mistakes</div>
+                  <ul className="list-disc pl-5 text-sm">
+                    {evaluation.errors.map((err: any, idx: number) => (
+                      <li key={idx} className="mb-1">
+                        <span className="uppercase text-xs tracking-wide mr-2 text-muted-foreground">
+                          {err.type}
+                        </span>
+                        {err.expected && (
+                          <span>
+                            Expected:{" "}
+                            <span className="font-medium">{err.expected}</span>{" "}
+                          </span>
+                        )}
+                        {err.actual && (
+                          <span>
+                            Got:{" "}
+                            <span className="font-medium">{err.actual}</span>{" "}
+                          </span>
+                        )}
+                        {err.explanation && (
+                          <span className="text-muted-foreground">
+                            – {err.explanation}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  const s = evaluation?.score ?? 0;
+                  const t =
+                    evaluatedTimeSpent ??
+                    Math.round((Date.now() - startTime) / 1000);
+                  onComplete(s, t);
+                }}
+              >
+                Continue
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

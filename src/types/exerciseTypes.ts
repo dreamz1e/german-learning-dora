@@ -82,6 +82,29 @@ export interface ListeningExercise {
   audioUrl?: string;
 }
 
+export interface ListeningEvaluationError {
+  type: "omission" | "insertion" | "substitution";
+  expected: string;
+  actual: string;
+  explanation: string;
+}
+
+export interface ListeningEvaluation {
+  score: number;
+  similarity: number;
+  wordErrorRate: number;
+  exactMatch: boolean;
+  correctedText: string;
+  feedback: string;
+  errors: ListeningEvaluationError[];
+  difficulty:
+    | "A2_BASIC"
+    | "A2_INTERMEDIATE"
+    | "B1_BASIC"
+    | "B1_INTERMEDIATE"
+    | "B1_ADVANCED";
+}
+
 export interface SentenceConstructionExercise {
   instruction: string;
   correctSentence: string;
