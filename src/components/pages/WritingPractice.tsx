@@ -63,17 +63,73 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
     }
   }, []);
 
-  const topics = [
-    "Daily Life",
-    "Personal Experiences",
-    "Travel & Adventures",
-    "Food & Culture",
-    "Work & Career",
-    "Education & Learning",
-    "Technology & Media",
-    "Environment & Nature",
-    "Health & Lifestyle",
-    "Relationships & Family",
+  // Comprehensive topic categories (200+ specific topics available via AI)
+  const topicCategories = [
+    {
+      value: "",
+      label: "🎲 Surprise Me (Infinite Variety)",
+      description: "AI generates a unique topic from 200+ possibilities",
+    },
+    {
+      value: "dailyLife",
+      label: "Daily Life",
+      description: "Routines, shopping, household, transportation",
+    },
+    {
+      value: "foodCulture",
+      label: "Food & Culture",
+      description: "Recipes, restaurants, traditions, dining",
+    },
+    {
+      value: "travelAdventure",
+      label: "Travel & Adventures",
+      description: "Trips, exploration, cultural experiences",
+    },
+    {
+      value: "workCareer",
+      label: "Work & Career",
+      description: "Jobs, workplace, professional development",
+    },
+    {
+      value: "educationLearning",
+      label: "Education & Learning",
+      description: "Studies, courses, academic life",
+    },
+    {
+      value: "technologyMedia",
+      label: "Technology & Media",
+      description: "Digital life, social media, innovation",
+    },
+    {
+      value: "healthWellness",
+      label: "Health & Wellness",
+      description: "Fitness, mental health, well-being",
+    },
+    {
+      value: "relationshipsSocial",
+      label: "Relationships & Social",
+      description: "Friends, family, dating, connections",
+    },
+    {
+      value: "hobbiesInterests",
+      label: "Hobbies & Interests",
+      description: "Creative pursuits, collections, activities",
+    },
+    {
+      value: "environmentNature",
+      label: "Environment & Nature",
+      description: "Sustainability, wildlife, conservation",
+    },
+    {
+      value: "societyCulture",
+      label: "Society & Culture",
+      description: "Traditions, identity, community, politics",
+    },
+    {
+      value: "scienceFuture",
+      label: "Science & Future",
+      description: "Innovation, discoveries, predictions",
+    },
   ];
 
   const exerciseTypes = [
@@ -292,20 +348,38 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
               {/* Topic Selection */}
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
-                  Topic (Optional)
+                  Topic Category
+                  <span className="block text-xs text-muted-foreground font-normal mt-1">
+                    Each category contains 15+ unique topics
+                  </span>
                 </label>
-                <select
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  className="w-full p-3 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
-                >
-                  <option value="">Any Topic</option>
-                  {topics.map((topicOption) => (
-                    <option key={topicOption} value={topicOption}>
-                      {topicOption}
-                    </option>
+                <div className="grid grid-cols-1 gap-2 max-h-[500px] overflow-y-auto">
+                  {topicCategories.map((cat) => (
+                    <button
+                      key={cat.value}
+                      onClick={() => setTopic(cat.value)}
+                      className={`
+                        p-3 rounded-lg border-2 text-sm transition-colors text-left
+                        ${
+                          topic === cat.value
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input bg-card hover:border-primary hover:bg-pink-50"
+                        }
+                      `}
+                    >
+                      <div className="font-medium">{cat.label}</div>
+                      <div
+                        className={`text-xs mt-1 ${
+                          topic === cat.value
+                            ? "text-primary-foreground/80"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {cat.description}
+                      </div>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
             </div>
 
@@ -373,16 +447,16 @@ export function WritingPractice({ onNavigate }: WritingPracticeProps = {}) {
         sections={[
           {
             items: [
-              "Start with simple sentences and build complexity",
-              "Use vocabulary and grammar from your current level",
-              "Review your writing for common errors before submitting",
+              "🎲 Over 200+ unique topics ensure you'll never see the same prompt twice",
+              "Each generation combines 6+ dimensions (format, audience, tone, timing, etc.)",
+              "Start with simple sentences and build complexity gradually",
             ],
           },
           {
             items: [
+              "Use vocabulary and grammar from your current level",
               "Take your time - quality is more important than speed",
-              "XP increases with difficulty and word count",
-              "Follow the guidelines to structure your writing effectively",
+              "XP is based on your evaluation score (up to 50 XP per exercise)",
             ],
           },
         ]}

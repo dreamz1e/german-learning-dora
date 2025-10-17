@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -30,6 +30,24 @@ interface WritingEvaluationError {
   severity: "minor" | "moderate" | "major";
   explanation: string;
   suggestion: string;
+}
+
+interface RealtimeError {
+  start: number;
+  end: number;
+  originalText: string;
+  correctedText: string;
+  errorType: "grammar" | "spelling" | "punctuation";
+  severity: "minor" | "moderate" | "major";
+  shortExplanation: string;
+  hint: string;
+  sentenceIndex: number; // Track which sentence this error belongs to
+}
+
+interface SentenceCheckResult {
+  hasErrors: boolean;
+  errors: Omit<RealtimeError, "sentenceIndex">[];
+  overallFeedback: string;
 }
 
 interface WritingEvaluation {
@@ -69,6 +87,17 @@ export function WritingExercise({
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const { addToast } = useToast();
 
+  // Real-time checking state
+  const [realtimeErrors, setRealtimeErrors] = useState<RealtimeError[]>([]);
+  const [isCheckingSentence, setIsCheckingSentence] = useState(false);
+  const [checkedSentences, setCheckedSentences] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedError, setSelectedError] = useState<number | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isUpdatingContentRef = useRef(false);
+
   const wordCount = text
     .trim()
     .split(/\s+/)
@@ -76,6 +105,274 @@ export function WritingExercise({
   const isWithinSuggestedRange =
     wordCount >= prompt.minWords && wordCount <= prompt.maxWords;
   const meetsMinimum = wordCount >= 5 && text.trim().length >= 10; // align with API
+
+  /**
+   * Extract sentences from text based on sentence-ending punctuation
+   */
+  const extractSentences = useCallback((text: string) => {
+    // Split by sentence-ending punctuation (. ! ?)
+    const sentenceRegex = /[^.!?]+[.!?]+/g;
+    const matches = text.match(sentenceRegex);
+    return matches || [];
+  }, []);
+
+  /**
+   * Check a single sentence for real-time errors
+   */
+  const checkSentence = useCallback(
+    async (
+      sentence: string,
+      sentenceIndex: number,
+      sentenceStartPos: number
+    ) => {
+      // Skip if already checked or too short
+      if (checkedSentences.has(sentence) || sentence.trim().length < 3) {
+        return;
+      }
+
+      setIsCheckingSentence(true);
+      try {
+        const response = await fetch("/api/ai/check-sentence", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sentence: sentence.trim(),
+            difficulty: prompt.difficulty,
+            context: `${prompt.promptDe}\n${prompt.promptEn}`,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to check sentence");
+        }
+
+        const result: SentenceCheckResult = await response.json();
+
+        // Mark sentence as checked
+        setCheckedSentences((prev) => new Set([...prev, sentence]));
+
+        if (result.hasErrors && result.errors.length > 0) {
+          // Map errors using positions from API (accurate for all cases including commas/spaces)
+          const newErrors: RealtimeError[] = [];
+
+          // Calculate the trim offset (spaces before the trimmed sentence)
+          const trimmedSentence = sentence.trim();
+          const trimOffset = sentence.indexOf(trimmedSentence);
+
+          for (const error of result.errors) {
+            // FALLBACK FIX: Ignore errors where originalText === correctedText
+            if (error.originalText.trim() === error.correctedText.trim()) {
+              console.warn(
+                "Ignoring invalid error where original and corrected text are the same:",
+                error
+              );
+              continue;
+            }
+
+            // Use positions from API response (relative to trimmed sentence)
+            // Calculate absolute positions in the full text
+            let absoluteStart = sentenceStartPos + trimOffset + error.start;
+            let absoluteEnd = sentenceStartPos + trimOffset + error.end;
+
+            // Handle insertion points (missing punctuation) where start === end
+            // In this case, we need to find what character to highlight
+            if (absoluteStart === absoluteEnd) {
+              // For insertion points, check if originalText is a space (missing comma case)
+              if (error.originalText === " ") {
+                // Look for a space near the insertion point (before or after)
+                if (absoluteStart > 0 && text[absoluteStart - 1] === " ") {
+                  // Space is before the insertion point
+                  absoluteStart = absoluteStart - 1;
+                } else if (
+                  absoluteStart < text.length &&
+                  text[absoluteStart] === " "
+                ) {
+                  // Space is at the insertion point
+                  absoluteEnd = absoluteStart + 1;
+                } else {
+                  // Can't find the space, skip this error
+                  console.warn(
+                    `Cannot find space for insertion point at position ${absoluteStart}`
+                  );
+                  continue;
+                }
+              } else {
+                // For other insertion points, expand to include the next character
+                if (absoluteStart < text.length) {
+                  absoluteEnd = absoluteStart + 1;
+                } else {
+                  continue;
+                }
+              }
+            }
+
+            // Validate the positions are within bounds
+            if (
+              absoluteStart >= 0 &&
+              absoluteEnd <= text.length &&
+              absoluteStart < absoluteEnd
+            ) {
+              // Verify the extracted text matches what we expect (for debugging)
+              const extractedText = text.substring(absoluteStart, absoluteEnd);
+
+              if (extractedText !== error.originalText) {
+                // Position mismatch - try to find the correct position
+                console.warn(
+                  `Position mismatch for error. Expected: "${error.originalText}", Got: "${extractedText}". Searching for correct position...`
+                );
+
+                // Special handling for space errors (missing commas)
+                // AI might return originalText as " " (space) or "" (empty) for comma errors
+                if (
+                  (error.originalText === " " || error.originalText === "") &&
+                  error.errorType === "punctuation"
+                ) {
+                  // For comma errors, search for common subordinating conjunctions
+                  // and find the space before them
+                  const conjunctions = [
+                    "weil",
+                    "dass",
+                    "wenn",
+                    "ob",
+                    "als",
+                    "während",
+                    "bevor",
+                    "nachdem",
+                    "obwohl",
+                  ];
+
+                  for (const conj of conjunctions) {
+                    const conjIndex = sentence.indexOf(conj);
+                    if (conjIndex > 0 && sentence[conjIndex - 1] === " ") {
+                      // Found the space before the conjunction
+                      newErrors.push({
+                        ...error,
+                        start: sentenceStartPos + conjIndex - 1,
+                        end: sentenceStartPos + conjIndex,
+                        sentenceIndex,
+                      });
+                      continue;
+                    }
+                  }
+
+                  console.warn(
+                    `Could not find subordinating conjunction for comma error`
+                  );
+                  continue;
+                }
+
+                // For non-space errors, try to find the correct position
+                if (error.originalText.trim().length > 0) {
+                  const errorTextPosition = sentence.indexOf(
+                    error.originalText
+                  );
+
+                  if (errorTextPosition !== -1) {
+                    newErrors.push({
+                      ...error,
+                      start: sentenceStartPos + errorTextPosition,
+                      end:
+                        sentenceStartPos +
+                        errorTextPosition +
+                        error.originalText.length,
+                      sentenceIndex,
+                    });
+                    continue;
+                  }
+                }
+
+                // If we can't find it, skip this error
+                console.warn(`Skipping error for: "${error.originalText}"`);
+                continue;
+              }
+
+              // Positions are correct, use them
+              newErrors.push({
+                ...error,
+                start: absoluteStart,
+                end: absoluteEnd,
+                sentenceIndex,
+              });
+            } else {
+              console.warn(
+                `Invalid error positions for "${error.originalText}": start=${error.start}, end=${error.end} (sentence pos: ${sentenceStartPos}, trim offset: ${trimOffset}) => absolute: ${absoluteStart}-${absoluteEnd}, text.length=${text.length}`
+              );
+            }
+          }
+
+          if (newErrors.length > 0) {
+            setRealtimeErrors((prev) => {
+              // Remove old errors from this sentence
+              const filtered = prev.filter(
+                (e) => e.sentenceIndex !== sentenceIndex
+              );
+              return [...filtered, ...newErrors];
+            });
+          } else {
+            // No valid errors found, clear any existing errors for this sentence
+            setRealtimeErrors((prev) =>
+              prev.filter((e) => e.sentenceIndex !== sentenceIndex)
+            );
+          }
+        } else {
+          // Remove any previous errors from this sentence
+          setRealtimeErrors((prev) =>
+            prev.filter((e) => e.sentenceIndex !== sentenceIndex)
+          );
+        }
+      } catch (error) {
+        console.error("Sentence check error:", error);
+        // Fail silently for real-time checks to not disrupt writing flow
+      } finally {
+        setIsCheckingSentence(false);
+      }
+    },
+    [checkedSentences, prompt.difficulty, prompt.promptDe, prompt.promptEn]
+  );
+
+  /**
+   * Detect when a sentence ends and trigger checking
+   */
+  useEffect(() => {
+    if (isSubmitted) return;
+
+    // Clear any existing timeout
+    if (checkTimeoutRef.current) {
+      clearTimeout(checkTimeoutRef.current);
+    }
+
+    // Check if the text ends with sentence-ending punctuation
+    const trimmedText = text.trim();
+    const endsWithPunctuation = /[.!?]$/.test(trimmedText);
+
+    if (endsWithPunctuation && trimmedText.length > 3) {
+      // Extract all sentences and calculate their positions
+      const sentences = extractSentences(text);
+
+      // Check the last sentence after a short delay
+      checkTimeoutRef.current = setTimeout(() => {
+        if (sentences.length > 0) {
+          const lastSentence = sentences[sentences.length - 1];
+
+          // Calculate the starting position of this sentence in the full text
+          let sentenceStartPos = 0;
+          for (let i = 0; i < sentences.length - 1; i++) {
+            sentenceStartPos += sentences[i].length;
+          }
+
+          checkSentence(lastSentence, sentences.length - 1, sentenceStartPos);
+        }
+      }, 800); // 800ms delay to avoid checking while still typing
+    }
+
+    return () => {
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
+    };
+  }, [text, isSubmitted, extractSentences, checkSentence]);
 
   const handleSubmit = async () => {
     if (!meetsMinimum) {
@@ -113,6 +410,9 @@ export function WritingExercise({
     if (isEvaluating || isLoadingNext) return; // prevent navigating while evaluating or already loading
     setText("");
     setIsSubmitted(false);
+    setRealtimeErrors([]);
+    setCheckedSentences(new Set());
+    setSelectedError(null);
     try {
       setIsLoadingNext(true);
       await onNewPrompt();
@@ -236,6 +536,209 @@ export function WritingExercise({
     return "text-red-600";
   };
 
+  /**
+   * Update editor with error highlights when errors change
+   */
+  useEffect(() => {
+    if (!editorRef.current || isSubmitted) return;
+
+    const editor = editorRef.current;
+    const currentText = editor.textContent || "";
+
+    // Skip if text doesn't match (user is still typing)
+    if (currentText !== text) {
+      return;
+    }
+
+    // Check if editor currently has highlighted errors
+    const hasHighlights = editor.querySelector("[data-error-start]") !== null;
+
+    // If no errors and no highlights, nothing to do
+    if (realtimeErrors.length === 0 && !hasHighlights) {
+      return;
+    }
+
+    // Save cursor position
+    const selection = window.getSelection();
+    let cursorOffset = 0;
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(editor);
+      preCaretRange.setEnd(range.endContainer, range.endOffset);
+      cursorOffset = preCaretRange.toString().length;
+    }
+
+    // Render text with or without error highlights
+    let highlightedText = text;
+
+    if (realtimeErrors.length > 0) {
+      // Sort errors by start position (DESCENDING) to process from end to start
+      // This way, adding HTML tags at the end doesn't affect earlier positions
+      const sortedErrors = [...realtimeErrors].sort(
+        (a, b) => b.start - a.start
+      );
+
+      // Filter out any overlapping errors (keep the first occurrence)
+      const nonOverlappingErrors: RealtimeError[] = [];
+      sortedErrors.forEach((error) => {
+        const hasOverlap = nonOverlappingErrors.some(
+          (existing) =>
+            (error.start >= existing.start && error.start < existing.end) ||
+            (error.end > existing.start && error.end <= existing.end)
+        );
+        if (!hasOverlap && error.start >= 0 && error.end <= text.length) {
+          nonOverlappingErrors.push(error);
+        }
+      });
+
+      // Process errors from end to start of the text
+      nonOverlappingErrors.forEach((error) => {
+        const errorId = `rt-error-${error.start}`; // Use position as unique ID
+        const severityClass = {
+          minor: "bg-yellow-200/70 border-b-2 border-yellow-500",
+          moderate: "bg-orange-200/70 border-b-2 border-orange-500",
+          major: "bg-red-200/70 border-b-2 border-red-500",
+        }[error.severity];
+
+        // Extract the error text from the CURRENT highlightedText
+        // (which may already have some errors wrapped)
+        const beforeError = highlightedText.substring(0, error.start);
+        const errorText = highlightedText.substring(error.start, error.end);
+        const afterError = highlightedText.substring(error.end);
+
+        // Skip if errorText is empty (invalid position)
+        if (!errorText) {
+          console.warn("Invalid error position:", error);
+          return;
+        }
+
+        // Wrap the error in a span tag
+        const spanTag = `<span class="${severityClass} cursor-pointer rounded px-0.5 transition-all duration-200 hover:shadow-sm" data-error-start="${error.start}" data-error-id="${errorId}">${errorText}</span>`;
+
+        // Reconstruct the text with the wrapped error
+        highlightedText = beforeError + spanTag + afterError;
+      });
+    }
+    // If realtimeErrors.length === 0, highlightedText remains as plain text
+
+    // Update editor content
+    isUpdatingContentRef.current = true;
+    editor.innerHTML = highlightedText;
+    isUpdatingContentRef.current = false;
+
+    // Restore cursor position
+    if (cursorOffset > 0 && selection) {
+      try {
+        const textNodes: Text[] = [];
+        const walker = document.createTreeWalker(
+          editor,
+          NodeFilter.SHOW_TEXT,
+          null
+        );
+        let node;
+        while ((node = walker.nextNode())) {
+          textNodes.push(node as Text);
+        }
+
+        let currentOffset = 0;
+        for (const textNode of textNodes) {
+          const textLength = textNode.textContent?.length || 0;
+          if (currentOffset + textLength >= cursorOffset) {
+            const range = document.createRange();
+            const offset = Math.min(cursorOffset - currentOffset, textLength);
+            range.setStart(textNode, offset);
+            range.setEnd(textNode, offset);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            break;
+          }
+          currentOffset += textLength;
+        }
+      } catch (error) {
+        console.debug("Could not restore cursor position:", error);
+      }
+    }
+  }, [realtimeErrors, text, isSubmitted]);
+
+  /**
+   * Handle contenteditable input changes
+   */
+  const handleContentChange = useCallback(
+    (e: React.FormEvent<HTMLDivElement>) => {
+      // Prevent processing if we're updating content programmatically
+      if (isUpdatingContentRef.current) return;
+
+      const newText = e.currentTarget.textContent || "";
+      const oldText = text;
+      setText(newText);
+
+      // If user edits a sentence with errors, clear those errors and mark for recheck
+      const sentences = extractSentences(newText);
+      const oldSentences = extractSentences(oldText);
+      const currentSentences = new Set(sentences);
+
+      // Find which sentences have been modified or removed
+      const modifiedOrRemovedSentences = new Set<string>();
+
+      // Check old sentences to see if they still exist unchanged
+      oldSentences.forEach((oldSent) => {
+        if (!currentSentences.has(oldSent)) {
+          modifiedOrRemovedSentences.add(oldSent);
+        }
+      });
+
+      // Remove checked sentences that have been modified or removed
+      setCheckedSentences((prev) => {
+        const updated = new Set<string>();
+        prev.forEach((s) => {
+          // Keep only if sentence still exists and hasn't been modified
+          if (currentSentences.has(s) && !modifiedOrRemovedSentences.has(s)) {
+            updated.add(s);
+          }
+        });
+        return updated;
+      });
+
+      // Clear errors for sentences that changed or no longer exist
+      setRealtimeErrors((prev) =>
+        prev.filter((error) => {
+          const sentence = sentences[error.sentenceIndex];
+          // Keep error only if sentence exists and hasn't been modified
+          return (
+            sentence &&
+            currentSentences.has(sentence) &&
+            !modifiedOrRemovedSentences.has(sentence)
+          );
+        })
+      );
+    },
+    [extractSentences, text]
+  );
+
+  /**
+   * Handle clicking on an error
+   */
+  const handleErrorClick = useCallback(
+    (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const errorStartStr = target.getAttribute("data-error-start");
+
+      if (errorStartStr !== null) {
+        const errorStart = parseInt(errorStartStr, 10);
+        // Find the error by its start position
+        const errorIndex = realtimeErrors.findIndex(
+          (err) => err.start === errorStart
+        );
+
+        if (errorIndex !== -1) {
+          setSelectedError(errorIndex === selectedError ? null : errorIndex);
+        }
+      }
+    },
+    [selectedError, realtimeErrors]
+  );
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
@@ -327,22 +830,129 @@ export function WritingExercise({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              disabled={isSubmitted}
-              placeholder="Start writing your German text here..."
-              className={`
-                w-full h-64 p-4 border-2 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-primary
-                ${
-                  isSubmitted
-                    ? "bg-secondary cursor-not-allowed text-foreground/70 border-input"
-                    : "bg-card text-foreground border-input hover:border-primary/40"
-                }
-                font-sans text-base leading-relaxed placeholder:text-muted-foreground
-                transition-all duration-200
-              `}
-            />
+            {/* Real-time feedback indicator */}
+            {isCheckingSentence && (
+              <div className="flex items-center space-x-2 text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded-md px-3 py-1.5">
+                <div className="animate-spin w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <span>AI is checking your sentence...</span>
+              </div>
+            )}
+
+            {/* Error count badge */}
+            {realtimeErrors.length > 0 && !isSubmitted && (
+              <div className="flex items-center justify-between text-sm bg-yellow-50 border border-yellow-200 rounded-md px-3 py-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-700">
+                    ⚠️ {realtimeErrors.length} error
+                    {realtimeErrors.length > 1 ? "s" : ""} detected
+                  </span>
+                </div>
+                <span className="text-xs text-yellow-600">
+                  Click on underlined text for details
+                </span>
+              </div>
+            )}
+
+            {/* Contenteditable div for inline editing with error highlights */}
+            <div className="relative">
+              {/* Placeholder overlay */}
+              {text.length === 0 && !isSubmitted && (
+                <div className="absolute inset-0 p-4 pointer-events-none text-muted-foreground text-base leading-relaxed">
+                  Start writing your German text here...
+                </div>
+              )}
+
+              <div
+                ref={editorRef}
+                contentEditable={!isSubmitted}
+                onInput={handleContentChange}
+                onClick={handleErrorClick}
+                suppressContentEditableWarning
+                className={`
+                  w-full min-h-[16rem] max-h-[24rem] overflow-y-auto p-4 border-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none
+                  ${
+                    isSubmitted
+                      ? "bg-secondary cursor-not-allowed text-foreground/70 border-input"
+                      : "bg-card text-foreground border-input hover:border-primary/40"
+                  }
+                  font-sans text-base leading-relaxed
+                  transition-all duration-200
+                `}
+              />
+
+              {/* Mobile-friendly error tooltip */}
+              {selectedError !== null &&
+                realtimeErrors[selectedError] &&
+                !isSubmitted && (
+                  <div className="mt-2 p-4 bg-white border-2 border-blue-300 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className={`w-3 h-3 rounded-full ${
+                            realtimeErrors[selectedError].severity === "major"
+                              ? "bg-red-500"
+                              : realtimeErrors[selectedError].severity ===
+                                "moderate"
+                              ? "bg-orange-500"
+                              : "bg-yellow-500"
+                          }`}
+                        />
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {realtimeErrors[selectedError].errorType}
+                        </Badge>
+                      </div>
+                      <button
+                        onClick={() => setSelectedError(null)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        aria-label="Close"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-red-50 p-2 rounded border border-red-200">
+                          <div className="text-xs font-medium text-red-700 mb-1">
+                            ❌ Your text:
+                          </div>
+                          <div className="text-sm text-red-900 font-mono">
+                            "{realtimeErrors[selectedError].originalText}"
+                          </div>
+                        </div>
+                        <div className="bg-green-50 p-2 rounded border border-green-200">
+                          <div className="text-xs font-medium text-green-700 mb-1">
+                            ✅ Correct:
+                          </div>
+                          <div className="text-sm text-green-900 font-mono">
+                            "{realtimeErrors[selectedError].correctedText}"
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                        <div className="text-xs font-medium text-blue-700 mb-1">
+                          💡 Explanation:
+                        </div>
+                        <div className="text-sm text-blue-900">
+                          {realtimeErrors[selectedError].shortExplanation}
+                        </div>
+                      </div>
+
+                      {realtimeErrors[selectedError].hint && (
+                        <div className="bg-purple-50 p-3 rounded border border-purple-200">
+                          <div className="text-xs font-medium text-purple-700 mb-1">
+                            📚 Learning Tip:
+                          </div>
+                          <div className="text-sm text-purple-900">
+                            {realtimeErrors[selectedError].hint}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+            </div>
 
             {/* Progress Bar */}
             <div className="space-y-2">
@@ -431,6 +1041,85 @@ export function WritingExercise({
           </div>
         </CardContent>
       </Card>
+
+      {/* Real-time Errors Summary (Mobile-friendly list) */}
+      {realtimeErrors.length > 0 && !isSubmitted && (
+        <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-yellow-300">
+          <CardHeader>
+            <CardTitle className="text-lg text-amber-900 flex items-center space-x-2">
+              <span className="text-xl">📝</span>
+              <span>Detected Issues ({realtimeErrors.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-sm text-amber-800 mb-3">
+                The AI has detected some issues in your writing. Tap any issue
+                below to see details:
+              </p>
+              {realtimeErrors.map((error, index) => (
+                <button
+                  key={index}
+                  onClick={() =>
+                    setSelectedError(index === selectedError ? null : index)
+                  }
+                  className={`w-full text-left p-3 rounded-lg border-2 transition-all duration-200 ${
+                    selectedError === index
+                      ? "border-blue-400 bg-blue-50 shadow-md"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
+                        error.severity === "major"
+                          ? "bg-red-500"
+                          : error.severity === "moderate"
+                          ? "bg-orange-500"
+                          : "bg-yellow-500"
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {error.errorType}
+                        </Badge>
+                        <Badge
+                          variant={
+                            error.severity === "major"
+                              ? "destructive"
+                              : error.severity === "moderate"
+                              ? "warning"
+                              : "secondary"
+                          }
+                          className="text-xs"
+                        >
+                          {error.severity}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-gray-700 font-medium mb-1">
+                        "{error.originalText}" → "{error.correctedText}"
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {error.shortExplanation}
+                      </div>
+                      {selectedError === index && (
+                        <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="text-xs text-purple-700 bg-purple-50 p-2 rounded">
+                            💡 <strong>Tip:</strong> {error.hint}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Feedback (shown after submission) */}
       {isSubmitted && (

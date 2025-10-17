@@ -11,6 +11,7 @@ import { errorCorrectionPrompt } from "./prompts/errorCorrectionPrompt";
 import { createWritingEvaluationPrompt } from "./prompts/writingEvaluationPrompt";
 import { batchVocabularyPrompt } from "./prompts/batchVocabularyPrompt";
 import { batchGrammarPrompt } from "./prompts/batchGrammarPrompt";
+import { realtimeSentenceCheckPrompt } from "./prompts/realtimeSentenceCheckPrompt";
 import {
   GermanExerciseSchema,
   VocabularyWordsSchema,
@@ -23,6 +24,7 @@ import {
   ListeningEvaluationSchema,
   BatchGrammarExercisesSchema,
   BatchVocabularyExercisesSchema,
+  RealtimeSentenceCheckSchema,
 } from "./schemas";
 import { processAIResponse } from "./responseUtils";
 import { ContentTracker } from "./contentTracker";
@@ -49,9 +51,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const model = "openai/gpt-4.1";
-const evaluationModel = "anthropic/claude-sonnet-4"; // Better for structured output
+const model = "anthropic/claude-haiku-4.5";
+const batchGrammarModel = "openai/gpt-4.1";
+const evaluationModel = "anthropic/claude-sonnet-4.5"; // Better for structured output
 const ttsModel = "gpt-4o-mini-tts";
+const realtimeCheckModel = "google/gemini-2.5-flash"; // Fast model for real-time checks
 
 // In-memory exercise cycle managers (in production, this would be stored in database)
 const exerciseCycleManagers = new Map<string, ExerciseCycleManager>();
@@ -201,7 +205,7 @@ export async function generateBatchGrammarExercises(
   );
 
   const response = await openai.chat.completions.create({
-    model: model,
+    model: batchGrammarModel,
     messages: [
       {
         role: "user",
@@ -209,7 +213,7 @@ export async function generateBatchGrammarExercises(
       },
     ],
     temperature: 0.2,
-    max_tokens: 7000,
+    max_tokens: 10000,
     response_format: {
       type: "json_schema",
       json_schema: {
@@ -940,12 +944,14 @@ export async function generateWritingExercise(
 ): Promise<WritingExercise> {
   try {
     // Generate variation seed for unique content
-    const variationSeed = ContentTracker.generateVariationSeed(
-      userId,
-      "writing",
-      difficulty,
-      topic
-    );
+    // Include timestamp in variation seed for even more uniqueness
+    const variationSeed =
+      ContentTracker.generateVariationSeed(
+        userId,
+        "writing",
+        difficulty,
+        topic || "random"
+      ) + `_${Date.now()}`;
 
     const response = await openai.chat.completions.create({
       model: model,
@@ -960,8 +966,8 @@ export async function generateWritingExercise(
           ),
         },
       ],
-      temperature: 0.8,
-      max_tokens: 800,
+      temperature: 0.9, // Increased for more variety
+      max_tokens: 1000, // Increased for more detailed prompts
       response_format: {
         type: "json_schema",
         json_schema: {
@@ -1289,4 +1295,70 @@ function extractScore(content: string, scoreType: string): number | null {
   const regex = new RegExp(`"${scoreType}":\\s*(\\d+)`, "i");
   const match = content.match(regex);
   return match ? parseInt(match[1], 10) : null;
+}
+
+// Type definition for real-time sentence check result
+export type SentenceCheckResult = {
+  hasErrors: boolean;
+  errors: Array<{
+    start: number;
+    end: number;
+    originalText: string;
+    correctedText: string;
+    errorType: "grammar" | "spelling" | "punctuation";
+    severity: "minor" | "moderate" | "major";
+    shortExplanation: string;
+    hint: string;
+  }>;
+  overallFeedback: string;
+};
+
+/**
+ * Check a single sentence for grammatical errors and spelling mistakes in real-time
+ * Optimized for fast response using Gemini 2.5 Flash
+ */
+export async function checkSentenceRealtime(
+  sentence: string,
+  difficulty: string,
+  context?: string
+): Promise<SentenceCheckResult> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: realtimeCheckModel,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a helpful German language tutor providing real-time feedback.",
+        },
+        {
+          role: "user",
+          content: realtimeSentenceCheckPrompt(sentence, difficulty, context),
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 1000,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error("No content generated");
+
+    // Use processAIResponse with required fields validation
+    const result = processAIResponse<SentenceCheckResult>(content, [
+      "hasErrors",
+      "errors",
+      "overallFeedback",
+    ]);
+
+    return result;
+  } catch (error) {
+    console.error("Error checking sentence:", error);
+    // Return empty result on error to not disrupt writing flow
+    return {
+      hasErrors: false,
+      errors: [],
+      overallFeedback: "",
+    };
+  }
 }

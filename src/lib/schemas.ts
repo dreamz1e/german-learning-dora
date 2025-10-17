@@ -590,6 +590,88 @@ export const ListeningEvaluationSchema = {
   additionalProperties: false,
 };
 
+// Real-time Sentence Checking Schema
+export const RealtimeSentenceCheckSchema = {
+  type: "object",
+  properties: {
+    hasErrors: {
+      type: "boolean",
+    },
+    errors: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          start: {
+            type: "integer",
+            minimum: 0,
+            description: "0-indexed character position where error starts",
+          },
+          end: {
+            type: "integer",
+            minimum: 0,
+            description: "Character position where error ends",
+          },
+          originalText: {
+            type: "string",
+            minLength: 0,
+            maxLength: 100,
+            description:
+              "Exact incorrect text (for comma errors: space character ' ')",
+          },
+          correctedText: {
+            type: "string",
+            minLength: 1,
+            maxLength: 100,
+            description: "Correct version (for comma errors: ', ')",
+          },
+          errorType: {
+            type: "string",
+            enum: ["grammar", "spelling", "punctuation"],
+          },
+          severity: {
+            type: "string",
+            enum: ["minor", "moderate", "major"],
+          },
+          shortExplanation: {
+            type: "string",
+            minLength: 5,
+            maxLength: 100,
+            description: "Brief explanation suitable for mobile tooltip",
+          },
+          hint: {
+            type: "string",
+            minLength: 5,
+            maxLength: 150,
+            description: "Brief hint for improvement",
+          },
+        },
+        required: [
+          "start",
+          "end",
+          "originalText",
+          "correctedText",
+          "errorType",
+          "severity",
+          "shortExplanation",
+          "hint",
+        ],
+        additionalProperties: false,
+      },
+      minItems: 0,
+      maxItems: 10,
+    },
+    overallFeedback: {
+      type: "string",
+      minLength: 5,
+      maxLength: 100,
+      description: "Brief encouraging message",
+    },
+  },
+  required: ["hasErrors", "errors", "overallFeedback"],
+  additionalProperties: false,
+};
+
 // Batch Exercise Generation Schemas
 export const BatchGrammarExercisesSchema = {
   type: "object",

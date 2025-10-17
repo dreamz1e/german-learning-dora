@@ -83,8 +83,20 @@ function cleanJsonResponse(content: string): string {
   // appear INSIDE string literals. Removing / escaping them globally caused
   // stray backslashes outside strings and broke parsing.
 
-  // Find JSON start
-  const jsonStart = Math.max(cleaned.indexOf("{"), cleaned.indexOf("["));
+  // Find JSON start - prefer object over array
+  const objStart = cleaned.indexOf("{");
+  const arrStart = cleaned.indexOf("[");
+  let jsonStart = -1;
+
+  if (objStart !== -1 && arrStart !== -1) {
+    // Both found - use whichever comes first
+    jsonStart = Math.min(objStart, arrStart);
+  } else if (objStart !== -1) {
+    jsonStart = objStart;
+  } else if (arrStart !== -1) {
+    jsonStart = arrStart;
+  }
+
   if (jsonStart > 0) {
     cleaned = cleaned.substring(jsonStart);
   }
